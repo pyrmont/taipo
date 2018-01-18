@@ -1,0 +1,37 @@
+---
+# Integer
+-
+  - :class: 'Integer'
+# String|Integer
+-
+  - :class: 'String'
+  - :class: 'Integer'
+# Array<String(min: 3)>(max: 10)
+-
+  - :class: 'Array'
+    :child_type:
+      -
+        - :class: 'String'
+          :constraints: 'min: 3'
+    :constraints: 'max: 10'
+# Hash<Symbol,Integer(max: 100)>
+-
+  - :class: 'Hash'
+    :child_type:
+      -
+        - :class: 'Symbol'
+      -
+        - :class: 'Integer'
+          :constraints: 'max: 100'
+# String(len: 5)
+-
+  - :class: 'String'
+    :constraints: 'len: 5'
+# Integer(val: 3)
+-
+  - :class: 'Integer'
+    :constraints: 'val: 3'
+# String(val: "This will match.")
+-
+  - :class: 'String'
+    :constraints: 'val: "This will match."'
