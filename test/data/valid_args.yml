@@ -1,8 +1,11 @@
-- 99
-- 1
+- 99                    # Integer
+- 1                     # String|Integer
 -
-  - 'Test'
-- :test: 1
-- 'Tests'
-- 3
-- 'This will match.'
+  - 'Test'              # Array<String(min: 3)>(max: 10)
+- :test: 1              # Hash<Symbol,Integer(max: 100)>
+- 'aaa'                 # String(format: /a{3}/)
+- 'Tests'               # String(len: 5)
+- 'This will match.'    # String(val: "This will match.")
+- 10                    # Integer(min: 0)
+- -10                   # Integer(max: 100)
+- 3                     # Integer(val: 3)

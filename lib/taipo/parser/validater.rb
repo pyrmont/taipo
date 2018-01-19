@@ -3,8 +3,95 @@ require 'taipo/parser/syntax_state'
 
 module Taipo
   module Parser
-    
+
     # A validater of Taipo type definitions
+    #
+    # Taipo's type definition syntax has four components: (1) names; (2)
+    # collections; (3) constraints; and (4) sums.
+    #
+    # === Names
+    #
+    #   'String', 'Numeric'
+    #
+    # A name should be the name of a class or a module.
+    #
+    # The validater does not check whether the name represents a valid name in
+    # the current context nor does it check whether the name complies with
+    # Ruby's requirements for names. Either situation will cause an exception
+    # to be raised by {Taipo::Check#check} or {Taipo::Check#review}.
+    #
+    # One special case is where the name is left blank. The validater will
+    # accept this as valid. {Taipo::Parser} will implictly add the name
+    # 'Object' when parsing the type definition. This allows a clean syntax for
+    # duck types (which are really constraints on the class Object).
+    #
+    # === Collections
+    #
+    #   'Array<Integer>', 'Hash<Symbol, String>', 'Array<Array<Float>>'
+    #
+    # A collection should be the type definiton for elements returned by
+    # +Enumerator#each+ (the child type) called on the collecting object (the
+    # parent type).
+    #
+    # A collection is demarcated by the angle brackets +<+ and +>+. These come
+    # immediately after the name of the parent (ie. without a space). The type
+    # definition for the child comes immediately after the opening angle
+    # bracket.
+    #
+    # If +Enumerator#each+ returns multiple values (eg. such as with Hash), the
+    # type definition for each value is delimited by a comma. It is optional
+    # whether a space follows the comma.
+    #
+    # The type definition for a child element can contain all the components of
+    # a type definition (ie. name, collection, constraint, sum) allowing for
+    # collections that contain collections and so on.
+    #
+    # === Constraints
+    #
+    #   'Array(len: 5)', 'Integer(min: 0, max: 10)', 'String(format: /a{3}/)',
+    #   'String(val: "Hello world!")', 'Foo(#bar)'
+    #
+    # A constraint should be a list of identifiers and values.
+    #
+    # A constraint is demarcated by parentheses (ie. +(+ and +)+). These come
+    # immediately after the name or collection (ie. without a space). The first
+    # identifier comes immediately after the opening parenthesis.
+    #
+    # An identifier and a value are separated by a colon (and an optional
+    # space). Multiple identifier-value pairs are delimited by a comma. It is
+    # optional whether a space follows the comma.
+    #
+    # The permitted identifiers and their values are as follows:
+    # - +format+: takes a regular expression demarcated by +/+
+    # - +len+: takes an integer
+    # - +max+: takes an integer
+    # - +min+: takes an integer
+    # - +val+: takes a number or a string demarcated by +"+
+    #
+    # The validater does not check whether the identifiers and values are
+    # acceptable, merely that they conform to the grammar.
+    # {Taipo::Parser.parse} will raise an exception when it parses the
+    # definition if the values are not acceptable for the relevant identifier.
+    # Similarly, while the repetition of an identifier is technically invalid,
+    # the exception will not be raised until {Taipo::Parser.parse} is called.
+    #
+    # One special case is where the identifier begins with a +#+. For this
+    # identifier, no value is provided and the constraint instead results in
+    # {Taipo::Check#check} and {Taipo::Check#review} checking whether the
+    # given object returns true for +Object#respond_to?+ with the identifier as
+    # the symbol.
+    #
+    # === Sums
+    #
+    #   'String|Float',
+    #   'Boolean|Array<String|Hash<Symbol,Point>|Array<String>>',
+    #   'Integer(max: 100)|Float(max: 100)'
+    #
+    # A sum is a combination of two or more type definitions.
+    #
+    # The sum comprises two or more type definitions, each separated by a bar
+    # (ie. +|+).
+    #
     # @since 1.0.0
     module Validater
 
@@ -12,8 +99,10 @@ module Taipo
       #
       # @param str [String] a type definition
       #
+      # @return [NilClass]
+      #
       # @raise [::TypeError] if +str+ is not a String
-      # @raise [Taipo::SyntaxError] if +str+ is not a valid type definition 
+      # @raise [Taipo::SyntaxError] if +str+ is not a valid type definition
       #
       # @since 1.0.0
       def self.validate(str)

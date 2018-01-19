@@ -26,8 +26,8 @@ class TaipoTypeElementTest < Minitest::Test
         constraint = Taipo::TypeElement::Constraint.new(name: 'min',
                                                             value: '0')
         te = Taipo::TypeElement.new(name: @valid_name,
-                                        child_type: child_type,
-                                        constraints: [constraint])
+                                    child_type: child_type,
+                                    constraints: [constraint])
         assert_kind_of Taipo::TypeElement, te
       end
 
@@ -42,7 +42,7 @@ class TaipoTypeElementTest < Minitest::Test
         invalid_child_type = Taipo::TypeElement::ChildType.new
         assert_raises(ArgumentError) do
           Taipo::TypeElement.new(name: @valid_name,
-                                     child_type: invalid_child_type)
+                                 child_type: invalid_child_type)
         end
       end
 
@@ -50,7 +50,7 @@ class TaipoTypeElementTest < Minitest::Test
         invalid_constraints = []
         assert_raises(ArgumentError) do
           Taipo::TypeElement.new(name: @valid_name,
-                                     constraints: invalid_constraints)
+                                 constraints: invalid_constraints)
         end
       end
 

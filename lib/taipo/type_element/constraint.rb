@@ -72,7 +72,7 @@ module Taipo
           end
         when 'min'
           if arg.is_a? Numeric
-            arg <= @value
+            arg >= @value
           else
             arg.respond_to?('size') && arg.size >= @value
           end

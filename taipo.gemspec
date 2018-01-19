@@ -12,9 +12,11 @@ Gem::Specification.new do |spec|
   spec.summary       = %q{A simple library for checking the types of variables.}
   spec.description   = %q{Taipo provides a simple way to check your variables are what you think they are. With an easy to use syntax you can call a single method and pass expressive type definitions.}
   spec.homepage      = "https://github.com/pyrmont/taipo/"
+  spec.license       = "Unlicense"
 
   spec.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
   spec.require_paths = ["lib"]
+  spec.required_ruby_version = '>= 2.4.0'
 
   spec.metadata['allowed_push_host'] = 'https://rubygems.org'
 
