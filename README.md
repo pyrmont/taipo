@@ -1,4 +1,6 @@
 [![Gem Version](https://badge.fury.io/rb/taipo.svg)](https://badge.fury.io/rb/taipo) [![Inline docs](http://inch-ci.org/github/pyrmont/taipo.svg?branch=master)](http://inch-ci.org/github/pyrmont/taipo)
+[![Build Status](https://travis-ci.org/pyrmont/taipo.svg?branch=master)](https://travis-ci.org/pyrmont/taipo)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/7b5dcb371ee422b27f0c/test_coverage)](https://codeclimate.com/github/pyrmont/taipo/test_coverage)
 
 # Taipo
 
