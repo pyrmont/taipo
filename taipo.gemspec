@@ -25,5 +25,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "minitest", "~> 5.10.3"
   spec.add_development_dependency "minitest-reporters", "~> 1.1.19"
   spec.add_development_dependency "shoulda-context", "~> 1.2.0"
+  spec.add_development_dependency "simplecov", "~> 0.15.1"
   spec.add_development_dependency "yard", "~> 0.9.12"
 end
