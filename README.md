@@ -140,6 +140,12 @@ Found a bug? I’d love to know about it. The best way is to report them in the 
 
 If you’re interested in contributing to Taipo, feel free to fork and submit a pull request.
 
+## Versioning
+
+Taipo uses [Semantic Versioning 2.0.0][sv2].
+
+[sv2]: http://semver.org/
+
 ## Colophon
 
 Taipo began as, and remains primarily, an exercise to improve my programming skills. If Taipo has piqued your interest in adding type checks to Ruby, consider some of the other options, such as [Contracts][cnt], [Rtype][rty], [Rubype][rub] or [Sig][sig].
