@@ -23,7 +23,18 @@ module Taipo
     # One special case is where the name is left blank. The validater will
     # accept this as valid. {Taipo::Parser} will implictly add the name
     # 'Object' when parsing the type definition. This allows a clean syntax for
-    # duck types (which are really constraints on the class Object).
+    # duck types (discussed in further detail below).
+    #
+    # ==== Duck Types
+    #
+    #   '#to_s', '(#foo, #bar)'
+    #
+    # As noted above, duck types can be specified by using a blank name. Duck
+    # types are really constraints (discussed in further detail below) on the
+    # class Object. While normally constraints need to be enclosed in
+    # parentheses, if there is a blank name and only one method constraint, the
+    # parentheses can be omitted. For defining duck types that respond to
+    # multiple methods, the parentheses are required.
     #
     # === Collections
     #

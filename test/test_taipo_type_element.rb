@@ -147,5 +147,20 @@ class TaipoTypeElementTest < Minitest::Test
         end
       end
     end
+
+    context "has an instance method #to_s that" do
+      setup do
+        type_defs = YAML.load_file 'test/data/valid_type_defs.yml'
+        @types = TaipoTestHelper.create_types type_defs
+        @type_def_strings = YAML.load_file(
+                             'test/data/valid_type_defs_as_strings.yml')
+      end
+
+      should "return the String representation" do
+        @type_def_strings.each.with_index do |t_str,index|
+          assert_equal(t_str, Taipo.types_to_s(@types[index]))
+        end
+      end
+    end
   end
 end

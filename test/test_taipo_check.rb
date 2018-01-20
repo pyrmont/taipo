@@ -3,9 +3,13 @@ require 'taipo'
 
 class TaipoCheckTest < Minitest::Test
   context "Taipo::Check" do
+    setup do
+      Taipo.alias = true
+      extend Taipo::Check
+    end
+
     context "has an instance method #check that" do
       setup do
-        extend Taipo::Check
         @a = 'Test'
         @b = 1
         @arg_types = { :@a => 'String', :@b => 'Integer' }
@@ -60,7 +64,6 @@ class TaipoCheckTest < Minitest::Test
 
     context "has an instance method #review that" do
       setup do
-        extend Taipo::Check
         @a = 'Test'
         @b = 1
         @arg_types = { :@a => 'String', :@b => 'Integer' }
@@ -87,6 +90,37 @@ class TaipoCheckTest < Minitest::Test
         invalid_inputs.each do |i|
           assert_equal i[0], review(binding, i[1])
         end
+      end
+    end
+
+    context "has an alias that" do
+      setup do
+        class FooAliased
+          include Taipo::Check
+
+          def bar(a)
+            check types, a: 'Integer'
+          end
+        end
+
+        class FooUnaliased
+          Taipo.alias = false
+          include Taipo::Check
+
+          def bar(a)
+            check types, a: 'Integer'
+          end
+        end
+      end
+
+      should "alias types if Taipo.alias? returns true" do
+        foo = FooAliased.new
+        assert Array.new, foo.bar(10)
+      end
+
+      should "not alias types if Taipo.alias? returns false" do
+        foo = FooUnaliased.new
+        assert_raises(::NameError) { foo.bar(10) }
       end
     end
   end

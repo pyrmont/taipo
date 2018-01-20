@@ -196,5 +196,24 @@ module Taipo
         c.constrain?(arg)
       end
     end
+
+    # Return the String representation of this TypeElement
+    #
+    # @since 1.1.0
+    # @api private
+    def to_s
+      name_str = @name
+      child_type_str = (@child_type.nil?) ? '' : @child_type.to_s
+      constraints_str = if @constraints.nil?
+                          ''
+                        else
+                          inner = @constraints.reduce('') do |memo,c|
+                                    (memo == '') ? c.to_s : memo + ',' + c.to_s
+                                  end
+                          '(' + inner + ')'
+                        end
+      name_str + child_type_str + constraints_str
+    end
+
   end
 end

@@ -13,8 +13,13 @@ module Taipo
     # Syntactic sugar to allow a user to write +check types,...+ and +review
     # types,...+
     #
-    # @since 1.0.0
-    alias types binding
+    # The alias is written with underscores in order to support making aliasing
+    # with the keyword +types+ optional (since it's possible the user wishes to
+    # use this keyword for other purposes).
+    #
+    # @since 1.1.0
+    # @api private
+    alias __types__ binding
 
     # Check whether the given arguments match the given type definition in the
     # given context
@@ -39,7 +44,7 @@ module Taipo
     # @since 1.0.0
     #
     # @example
-    #   require 'taipo/taipo'
+    #   require 'taipo'
     #
     #   class A
     #     include Taipo::Check
@@ -57,10 +62,10 @@ module Taipo
     #
     #   a = A.new()
     #   a.foo('Hello world!')     #=> "Hello world!"
-    #   a.bar('Goodbye world!')   #=> raise Taipo::TypeError
+    #   a.bar('Goodbye world!')   #=> Taipo::TypeError
     def check(context, collect_invalids = false, **checks)
       msg = "The first argument to this method must be of type Binding."
-      raise TypeError, msg unless context.is_a? Binding
+      raise ::TypeError, msg unless context.is_a? Binding
 
       checks.reduce(Array.new) do |memo,(k,v)|
         arg = if k[0] == '@' && self.instance_variable_defined?(k)
@@ -84,8 +89,8 @@ module Taipo
           if Taipo::instance_method? v
             msg = "Object '#{k}' does not respond to #{v}."
           elsif arg.is_a? Enumerable
-            type_string = arg.class.name + Taipo.child_types_string(arg)
-            msg = "Object '#{k}' is #{type_string} but expected #{v}."
+            type_def = Taipo.object_to_type_def arg
+            msg = "Object '#{k}' is #{type_def} but expected #{v}."
           else
             msg = "Object '#{k}' is #{arg.class.name} but expected #{v}."
           end
@@ -112,6 +117,35 @@ module Taipo
     # @since 1.0.0
     def review(context, **checks)
       self.check(context, true, checks)
+    end
+
+    # Perform operations if this module is extended
+    #
+    # This is the callback called by Ruby when a module is included. In this
+    # case, the callback will alias the method +__types__+ as +types+ if
+    # {Taipo.alias?} returns true.
+    #
+    # @param extender [Class|Module] the class or module extending this module
+    #
+    # @since 1.1.0
+    # @api private
+    def self.extended(extender)
+      extender.singleton_class.send(:alias_method, :types, :__types__) if
+        Taipo.alias?
+    end
+
+    # Perform operations if this module is included
+    #
+    # This is the callback called by Ruby when a module is included. In this
+    # case, the callback will alias the method +__types__+ as +types+ if
+    # {Taipo.alias?} returns true.
+    #
+    # @param includer [Class|Module] the class or module including this module
+    #
+    # @since 1.1.0
+    # @api private
+    def self.included(includer)
+      includer.send(:alias_method, :types, :__types__) if Taipo.alias?
     end
   end
 end

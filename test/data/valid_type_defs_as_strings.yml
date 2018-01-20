@@ -1,0 +1,11 @@
+---
+- 'Integer'
+- 'String|Integer'
+- 'Array<String(min:3)>(max:10)'
+- 'Hash<Symbol,Integer(max:100)>'
+- 'String(format:/a{3}/)'
+- 'String(len:5)'
+- 'String(val:"This will match.")'
+- 'Integer(min:0)'
+- 'Integer(max:100)'
+- 'Integer(val:3)'
