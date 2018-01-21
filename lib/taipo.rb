@@ -41,6 +41,8 @@ module Taipo
   @@alias = true
 
   # Set whether +Kernel#binding+ should be aliased with the keyword +types+.
+  # Note that this will be reset to true whenever {Taipo::Check} is extended or
+  # included.
   #
   # @param v [Boolean] Whether to alias
   #

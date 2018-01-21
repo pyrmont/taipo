@@ -122,6 +122,11 @@ class TaipoCheckTest < Minitest::Test
         foo = FooUnaliased.new
         assert_raises(::NameError) { foo.bar(10) }
       end
+
+      should "reset Taipo.alias once included" do
+        foo = FooUnaliased.new
+        assert Taipo.alias?
+      end
     end
   end
 end

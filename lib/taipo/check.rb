@@ -123,7 +123,8 @@ module Taipo
     #
     # This is the callback called by Ruby when a module is included. In this
     # case, the callback will alias the method +__types__+ as +types+ if
-    # {Taipo.alias?} returns true.
+    # {Taipo.alias?} returns true. {Taipo.alias} is reset to true at the end of
+    # this method.
     #
     # @param extender [Class|Module] the class or module extending this module
     #
@@ -132,13 +133,15 @@ module Taipo
     def self.extended(extender)
       extender.singleton_class.send(:alias_method, :types, :__types__) if
         Taipo.alias?
+      Taipo.alias = true
     end
 
     # Perform operations if this module is included
     #
     # This is the callback called by Ruby when a module is included. In this
     # case, the callback will alias the method +__types__+ as +types+ if
-    # {Taipo.alias?} returns true.
+    # {Taipo.alias?} returns true. {Taipo.alias} is reset to true at the end of
+    # this method.
     #
     # @param includer [Class|Module] the class or module including this module
     #
@@ -146,6 +149,7 @@ module Taipo
     # @api private
     def self.included(includer)
       includer.send(:alias_method, :types, :__types__) if Taipo.alias?
+      Taipo.alias = true
     end
   end
 end
