@@ -12,9 +12,9 @@ Taipo is a simple library for checking the types of variables.
 
 ## Overview
 
-When we deal with variables in our code, we have certain expectations about what those variables can and can’t do.
+When we deal with variables in our code, we have certain expectations about what those variables can and can't do.
 
-Taipo provides a simple way to make those expectations explicit. If an expectation isn’t met, Taipo can either raise an exception or return the problematic variables for us to handle.
+Taipo provides a simple way to make those expectations explicit. If an expectation isn't met, Taipo can either raise an exception or return the problematic variables for us to handle.
 
 ## Installation
 
@@ -27,23 +27,23 @@ Taipo provides two methods in the `Taipo::Check` module that we can mix into our
 ### #check
 
 ```ruby
-require ‘taipo’
+require 'taipo'
 
 class Foo
   include Taipo::Check
 
   def double(val)
-    check types, val: ‘Integer’
+    check types, val: 'Integer'
     val * 2
   end
 end
 
 foo = Foo.new
 foo.double 5      #=> 10
-foo.double ‘Oops’ #=> Taipo::TypeError
+foo.double 'Oops' #=> Taipo::TypeError
 ```
 
-The method `#check` will raise an exception as soon as one of its arguments doesn’t match its type definition.
+The method `#check` will raise an exception as soon as one of its arguments doesn't match its type definition.
 
 [More information about `#check`][rdc] is available in the documentation.
 
@@ -52,24 +52,24 @@ The method `#check` will raise an exception as soon as one of its arguments does
 ### #review
 
 ```ruby
-require ‘taipo’
+require 'taipo'
 
 class Foo
   include Taipo::Check
 
   def add(x, y)
-    errors = review types, x: ‘Integer’, y: ‘Integer’
+    errors = review types, x: 'Integer', y: 'Integer'
     if errors.empty?
       x + y
     else
-      ‘Oops’
+      'Oops'
     end
   end
 end
 
 foo = Foo.new
 foo.add 4, 5      #=> 9
-foo.add 2, ‘OK’   #=> ‘Oops’
+foo.add 2, 'OK'   #=> 'Oops'
 ```
 
 The method `#review` will put the invalid arguments into an array and return that to the user. If there are no errors, the array is empty.
@@ -88,7 +88,7 @@ The information in this README is only meant as an introduction. [More informati
 
 ### Names
 
-The simplest case is to write the name of a class. For example, `’String’`. Inherited class names can also be used.
+The simplest case is to write the name of a class. For example, `'String'`. Inherited class names can also be used.
 
 ```ruby
 check types, a: 'String', b: 'Numeric'
@@ -132,13 +132,13 @@ Taipo has been tested with Ruby version 2.4.2.
 
 ## Bugs
 
-Found a bug? I’d love to know about it. The best way is to report them in the [Issues section][ghi] on GitHub.
+Found a bug? I'd love to know about it. The best way is to report them in the [Issues section][ghi] on GitHub.
 
 [ghi]: https://github.com/pyrmont/taipo/issues
 
 ## Contributing
 
-If you’re interested in contributing to Taipo, feel free to fork and submit a pull request.
+If you're interested in contributing to Taipo, feel free to fork and submit a pull request.
 
 ## Versioning
 
