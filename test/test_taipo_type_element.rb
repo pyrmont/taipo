@@ -158,7 +158,8 @@ class TaipoTypeElementTest < Minitest::Test
 
       should "return the String representation" do
         @type_def_strings.each.with_index do |t_str,index|
-          assert_equal(t_str, Taipo.types_to_s(@types[index]))
+          assert_equal(TaipoTestHelper.prepare_for_comparison(t_str), 
+                       Taipo.types_to_s(@types[index]))
         end
       end
     end

@@ -9,3 +9,5 @@
 - 10                    # Integer(min: 0)
 - -10                   # Integer(max: 100)
 - 3                     # Integer(val: 3)
+- ''                    # #to_s
+- :foo                  # :foo

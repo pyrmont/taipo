@@ -40,7 +40,7 @@ module Taipo
     #   wrong type
     # @raise [::ArgumentError] if +name+, +child_type+ or +constraints+ was
     #   blank or empty, or +child_type+ or +constraints+ was non-nil and this
-    #   is a duck type (ie. a method the type responds to)
+    #   is a duck type (ie. a method the type responds to) or a symbol
     #
     # @since 1.0.0
     # @api private
@@ -61,15 +61,19 @@ module Taipo
       msg = 'Argument constraints was empty.'
       raise ::ArgumentError, msg if constraints&.empty?
 
-      if Taipo.instance_method? name
+      if Taipo.instance_method?(name) || Taipo.symbol?(name)
         msg = 'Argument child_type should have been nil.'
         raise ::ArgumentError, msg unless child_type.nil?
         msg = 'Argument constraints should have been nil.'
         raise ::ArgumentError, msg unless constraints.nil?
 
-        constraints = [
-          Taipo::TypeElement::Constraint.new(name: nil, value: name[1..-1])
-        ]
+        constraints = if Taipo.instance_method? name
+                        [Taipo::TypeElement::Constraint.new(name: nil, 
+                                                            value: name[1..-1])]  
+                      elsif Taipo.symbol? name
+                        [Taipo::TypeElement::Constraint.new(name: 'val',
+                                                            value: name)]
+                      end
         name = 'Object'
       end
       @name = name
@@ -214,6 +218,5 @@ module Taipo
                         end
       name_str + child_type_str + constraints_str
     end
-
   end
 end

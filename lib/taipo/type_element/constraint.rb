@@ -44,7 +44,13 @@ module Taipo
         msg = 'Argument name was an empty string.'
         raise ::ArgumentError, msg if name&.empty?
 
-        @name = (name.nil?) ? Constraint::METHOD : name
+        @name = if name.nil?
+                  Constraint::METHOD
+                elsif name == ':'
+                  'val'
+                else
+                  name
+                end
         @value = self.parse_value value
       end
 
@@ -79,6 +85,8 @@ module Taipo
         when 'val'
           if @value[0] == '"' && @value[-1] == '"'
             arg.to_s == @value.slice(1..-2)
+          elsif arg.is_a? Symbol
+            ":" + arg.to_s == @value
           else
             arg.to_s == @value
           end

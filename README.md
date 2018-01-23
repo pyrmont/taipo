@@ -126,6 +126,14 @@ Type definitions can be combined to form sum types. Sum types consist of two or 
 check types, a: 'String|Float', b: 'Boolean|Array<String|Hash<Symbol,Point>|Array<String>>', c: 'Integer(max: 100)|Float(max: 100)'
 ```
 
+#### Enums
+
+It's possible to approximate an enum by writing a sum type consisting of Symbols.
+
+```ruby
+check types, a: ':foo|:bar', b: ':one|:two|:three'
+```
+
 ## Requirements
 
 Taipo has been tested with Ruby version 2.4.2.

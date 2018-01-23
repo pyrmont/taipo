@@ -22,6 +22,7 @@ module Taipo
       Taipo::Parser::Validater.validate str
 
       content = ''
+      previous = ''
       is_fallthrough = false
       fallthroughs = [ '/', '"' ]
       closing_symbol = ''
@@ -34,12 +35,13 @@ module Taipo
 
         case c
         when '|'
-          next if content.empty? # Previous character must have been '>' or ')'.
-          el = Taipo::TypeElement.new name: content
-          content = ''
-          elements = stack.pop
-          elements.push el
-          stack.push elements
+          unless attached? previous # content.empty? # Previous character must have been '>' or ')'.
+            el = Taipo::TypeElement.new name: content
+            content = ''
+            elements = stack.pop
+            elements.push el
+            stack.push elements
+          end
         when '<'
           el = Taipo::TypeElement.new name: content
           content = ''
@@ -49,7 +51,7 @@ module Taipo
           first_component = Array.new
           stack.push first_component
         when '>'
-          if content.empty? # Previous character must have been '>' or ')'.
+          if attached? previous # content.empty? # Previous character must have been '>' or ')'.
             last_component = stack.pop
           else
             el = Taipo::TypeElement.new name: content.strip
@@ -65,7 +67,10 @@ module Taipo
           elements.push parent_el
           stack.push elements
         when '('
-          if content.empty? # Previous character must have been '>'.
+          if unattached? previous
+            el = Taipo::TypeElement.new name: 'Object'
+            content = ''
+          elsif attached_collection? previous # Previous character must have been '>'.
             elements = stack.pop
             el = elements.pop
             stack.push elements
@@ -77,8 +82,8 @@ module Taipo
           cst_collection = Array.new
           stack.push cst_collection
         when '#'
-          if bare_method_constraint? stack
-            content = content + '#'
+          if unattached? previous 
+            content = '#'
           else
             cst = Taipo::TypeElement::Constraint.new
             content = ''
@@ -87,11 +92,18 @@ module Taipo
             stack.push cst_collection
           end
         when ':'
-          cst = Taipo::TypeElement::Constraint.new name: content.strip
-          content = ''
-          cst_collection = stack.pop
-          cst_collection.push cst
-          stack.push cst_collection
+          if unattached? previous 
+            content = ':'
+          elsif content.strip.empty?
+            content = ':'
+          else
+            content = content
+            cst = Taipo::TypeElement::Constraint.new name: content.strip
+            content = ''
+            cst_collection = stack.pop
+            cst_collection.push cst
+            stack.push cst_collection
+          end
         when ',' # We could be inside a collection or a set of constraints
           if inside_collection? stack
             previous_component = stack.pop
@@ -132,6 +144,7 @@ module Taipo
           end
           content = content + c
         end
+        previous = c
       end
 
       unless content.empty?
@@ -142,6 +155,37 @@ module Taipo
       end
 
       stack.pop
+    end
+  
+    # Check whether the current element is 'attached' to anything
+    #
+    # This check is performed by checking whether +char+ is the final character
+    # in a collection or constraint.
+    #
+    # @param char [String] the character to use in the test
+    #
+    # @return [Boolean] the result
+    #
+    # @since 1.2.0
+    # @api private
+    def self.attached?(char)
+      char == '>' || char == ')'
+    end
+
+    # Check whether the current element is 'attached' to a collection
+    #
+    # Like {self.attached?}, this check is performed by checking +char+. In
+    # this case, the check is whether +char+ is the final character in a
+    # collection.
+    #
+    # @param char [String] the character to use in the test
+    #
+    # @return [Boolean] the result
+    #
+    # @since 1.2.0
+    # @api private
+    def self.attached_collection?(char)
+      char == '>'
     end
 
     # Check if the parser is inside a collection
@@ -156,16 +200,19 @@ module Taipo
       stack[-2]&.class == Taipo::TypeElement::ChildType
     end
 
-    # Check if this constraint is only a method
+    # Check whether the current element is 'unattached' to anything
     #
-    # @param stack [Array] the stack of parsed elements
+    # This check checks whether +char+ represents the beginning of a discrete
+    # type definition.
+    #
+    # @param char [String] the character to use in the test
     #
     # @return [Boolean] the result
     #
-    # @since 1.0.0
+    # @since 1.2.0
     # @api private
-    def self.bare_method_constraint?(stack)
-      stack[-2]&.class != Taipo::TypeElement
+    def self.unattached?(char)
+      char.empty? || char == '|' || char == '<'
     end
   end
 end

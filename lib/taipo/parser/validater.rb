@@ -103,6 +103,15 @@ module Taipo
     # The sum comprises two or more type definitions, each separated by a bar
     # (ie. +|+).
     #
+    # ==== Enums
+    #
+    #   ':foo|:bar', ':one|:two|:three'
+    #
+    # It's possible to approximate the enum idiom available in many languages
+    # by creating a sum type consisting of Symbols. As a convenience, Taipo 
+    # parses these values as constraints on the Object class. In other words, 
+    # +':foo|:bar'+ is really +'Object(val: :foo)|Object(val: :bar)'+.
+    #
     # @since 1.0.0
     module Validater
 
@@ -132,7 +141,7 @@ module Taipo
         chars = str.chars
         str_length = chars.size
 
-        state.prohibit_all except: [ :hsh, :oth ]
+        state.prohibit_all except: [ :lpr, :hsh, :cln, :oth ]
 
         while (i < str_length)
           msg = "The string '#{str}' has an error here: #{str[0, i+1]}"
@@ -142,11 +151,11 @@ module Taipo
             raise Taipo::SyntaxError, msg unless conditions.all?
             state.enable :lab
             state.enable :lpr
-            state.prohibit_all except: [ :hsh, :oth ]
+            state.prohibit_all except: [ :lpr, :hsh, :cln, :oth ]
           when '<' # lab
             conditions = [ state.allowed?(:lab) ]
             raise Taipo::SyntaxError, msg unless conditions.all?
-            state.prohibit_all except: [ :hsh, :oth ]
+            state.prohibit_all except: [ :lpr, :hsh, :cln, :oth ]
             state.increment :angle
           when '>' # rab
             conditions = [ state.allowed?(:rab), state.inside?(:angle) ]
@@ -176,10 +185,20 @@ module Taipo
               state.decrement :const
             end
           when ':' # cln
-            conditions = [ state.allowed?(:cln), state.inside?(:paren) ]
+            conditions = [ state.allowed?(:cln) ]
             raise Taipo::SyntaxError, msg unless conditions.all?
-            state.prohibit_all except: [ :sls, :qut, :spc, :oth ]
-            state.decrement :const
+            if state.outside? :paren
+              state.disable :lab
+              state.disable :lpr
+              state.prohibit_all except: [ :oth ]
+            else
+              if state.count(:const) == 0 # This is a symbol.
+                state.prohibit_all except: [ :qut, :oth ]
+              else
+                state.prohibit_all except: [ :cln, :sls, :qut, :spc, :oth ]
+                state.decrement :const
+              end
+            end
           when '/' #sls
             conditions = [ state.allowed?(:sls), state.inside?(:paren),
                            state.outside?(:const) ]
@@ -201,11 +220,15 @@ module Taipo
           when ' ' # spc
             conditions = [ state.allowed?(:spc) ]
             raise Taipo::SyntaxError, msg unless conditions.all?
-            state.prohibit_all except: [ :hsh, :sls, :qut, :oth ]
+            state.prohibit_all except: [ :hsh, :cln, :sls, :qut, :oth ]
           else # oth
             conditions = [ state.allowed?(:oth) ]
             raise Taipo::SyntaxError, msg unless conditions.all?
-            state.allow_all except: [ :hsh, :spc ]
+            if state.inside? :paren
+              state.allow_all except: [ :hsh, :spc ]
+            else
+              state.allow_all except: [ :hsh, :cln, :spc ]
+            end
           end
           i += 1
         end

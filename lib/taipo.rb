@@ -70,7 +70,7 @@ module Taipo
   # @note All this does is check whether the given string begins with a hash
   #   symbol.
   #
-  # @param str [String] the method name to check
+  # @param str [String] the string to check
   #
   # @return [Boolean] the result
   #
@@ -85,7 +85,7 @@ module Taipo
   # @note This assume that each element returned by Enumerator#each has the same
   #   number of components.
   #
-  # @param arg [Object] the object
+  # @param obj [Object] the object
   #
   # @return [String] a type definition of the object
   #
@@ -123,9 +123,23 @@ module Taipo
     end
   end
 
+  # Check if a string is the name of a symbol
+  #
+  # @note All this does is check whether the given string begins with a colon.
+  #
+  # @param str [String] the string to check
+  #
+  # @return [Boolean] the result
+  #
+  # @since 1.2.0
+  # @api private
+  def self.symbol?(str)
+    str[0] == ':'
+  end
+
   # Return a String representation of an array of {Taipo::TypeElement}
   #
-  # @param arg [Array<Taipo::TypeElement>] the array of {Taipo::TypeElement}
+  # @param types [Array<Taipo::TypeElement>] the array of {Taipo::TypeElement}
   #
   # @return [String] the String representation
   #
