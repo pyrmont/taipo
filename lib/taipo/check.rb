@@ -88,6 +88,8 @@ module Taipo
         unless collect_invalids || is_match
           if Taipo::instance_method? v
             msg = "Object '#{k}' does not respond to #{v}."
+          elsif Taipo::symbol? v
+            msg = "Object '#{k}' is not equal to #{v}."
           elsif arg.is_a? Enumerable
             type_def = Taipo.object_to_type_def arg
             msg = "Object '#{k}' is #{type_def} but expected #{v}."
