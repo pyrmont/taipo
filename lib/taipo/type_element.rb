@@ -174,7 +174,7 @@ module Taipo
       return false if !self_childless && arg_childless
 
       arg.all? do |a|
-        if a.is_a?(Array) # The elements of this collection have components
+        if !arg.is_a?(Array) && a.is_a?(Array)
           a.each.with_index.reduce(nil) do |memo,(component,index)|
             result = @child_type[index].any? { |c| c.match? component }
             (memo.nil?) ? result : memo && result

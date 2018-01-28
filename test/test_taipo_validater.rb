@@ -6,13 +6,19 @@ class TaipoValidaterTest < Minitest::Test
   context "Taipo::Validater" do
     setup do
       @Validater = Taipo::Parser::Validater
-      @valid_inputs = YAML.load_file 'test/data/valid_type_strings.yml'
     end
 
     context "has a module method .validate that" do
       setup do
-        @invalid_strings = YAML.load_file 'test/data/invalid_type_strings.yml'
-        @invalid_nonstrings = [ nil, Object.new, Array.new ]
+        valid_data = eval File.read('test/data/valid_defs.rb')
+        @valid_inputs = valid_data.definitions
+        invalid_data = eval File.read('test/data/invalid_defs.rb')
+        @invalid_strings = invalid_data.definitions.select do |d| 
+                             d.is_a? String
+                           end
+        @invalid_nonstrings = invalid_data.definitions.select do |d|
+                                !d.is_a? String
+                              end
       end
 
       should "return nil for valid inputs" do
@@ -21,7 +27,7 @@ class TaipoValidaterTest < Minitest::Test
         end
       end
 
-      should "raise a Taipo::TypeError for non-string parameters" do
+      should "raise a ::TypeError for non-string parameters" do
         @invalid_nonstrings.each do |i|
           assert_raises(::TypeError) { @Validater.validate(i) }
         end
@@ -30,8 +36,6 @@ class TaipoValidaterTest < Minitest::Test
       should "raise a Taipo::SyntaxError for invalid strings" do
         @invalid_strings.each do |i|
           assert_raises(Taipo::SyntaxError) { @Validater.validate(i) }
-          # error = assert_raises(SyntaxError) { @Parser.validate(i) }
-          # puts error.message
         end
       end
     end

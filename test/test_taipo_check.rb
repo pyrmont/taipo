@@ -20,11 +20,18 @@ class TaipoCheckTest < Minitest::Test
       end
 
       should "return an empty array for valid local variables" do
-        a = 'Test'
-        b = 1
-        arg_types = { a: 'String', b: 'Integer' }
-        assert_equal [], check(binding, arg_types)
-        a && b # Hack to avoid the unused variable warning.
+        # a = 'Test'
+        # b = 1
+        # arg_types = { a: 'String', b: 'Integer' }
+        # assert_equal [], check(binding, arg_types)
+        # a && b # Hack to avoid the unused variable warning.
+        td = eval File.read('test/data/valid_defs.rb')
+        td.each do |t|
+          t[:pass].each do |p|
+            a = p
+            assert_equal [], check(binding, a: t[:def])
+          end
+        end
       end
 
       should "raise a TypeError if the first argument isn't of type Binding" do

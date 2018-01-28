@@ -1,0 +1,40 @@
+td = TaipoTestHelper::TestData.new
+
+td.add ''
+td.add '|'
+td.add '<'
+td.add '>'
+td.add 'Stri,ng'
+td.add 'Stri:ng'
+td.add 'Stri/ng'
+td.add 'Stri ng'
+td.add '|String'
+td.add 'String|'
+td.add '<Array'
+td.add '>Array'
+td.add 'Array<>'
+td.add 'String<'
+td.add 'String>'
+td.add 'Integer<<'
+td.add 'Array<Array<'
+td.add 'Array<Array<String>'
+td.add 'Array<(String>'
+td.add 'Array(len)'
+td.add 'Array(len: )'
+td.add 'Array(len: 5'
+td.add 'Array((len: 5))'
+td.add 'Array(len: 5, (len: 5)| len: 5)'
+td.add 'Array(len: 5, len)'
+td.add 'String(format: /)'
+td.add 'String(format: //)'
+td.add 'String(format: /a/th)'
+td.add 'Integer(mi,n: 5)'
+td.add 'Integer((min: 5)'
+td.add 'Hash< Symbol, Integer(max: 5)>'
+td.add 'String(format: /This is a test.)'
+td.add 'String(val: "This is a test.)'
+td.add Array.new
+td.add Object.new
+td.add nil
+
+td

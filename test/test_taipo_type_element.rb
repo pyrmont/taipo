@@ -129,37 +129,49 @@ class TaipoTypeElementTest < Minitest::Test
 
     context "has an instance method #match? that" do
       setup do
-        type_defs = YAML.load_file 'test/data/valid_type_defs.yml'
-        @types = TaipoTestHelper.create_types type_defs
-      end
+        @csts = [ Taipo::TypeElement::Constraint.new(name: 'min', value: 1),
+                  Taipo::TypeElement::Constraint.new(name: 'max', value: 5) ]
+        
+        @te_p = Taipo::TypeElement.new(name: 'Integer')
+        
+        @te_c = Taipo::TypeElement.new(
+                  name: 'Array',
+                  child_type: Taipo::TypeElement::ChildType.new([[@te_p]])
+                )
+
+        @te_p_with_c = @te_p.dup
+        @te_p_with_c.constraints = @csts
+        
+        @te_c_with_c = @te_c.dup
+        @te_c_with_c.constraints = @csts
+      end 
 
       should "return true for a match" do
-        valid_args = YAML.load_file 'test/data/valid_args.yml'
-        valid_args.each.with_index do |v,index|
-          assert (@types[index].any? { |t| t.match?(v) == true } )
-        end
+        assert @te_p.match?(1)
+        assert @te_c.match?([1])
+        assert @te_p_with_c.match?(1)
+        assert @te_c_with_c.match?([1])
       end
 
       should "return false for a failed match" do
-        invalid_args = YAML.load_file 'test/data/invalid_args.yml'
-        invalid_args.each.with_index do |i,index|
-          assert (@types[index].any? { |t| t.match?(i) == false } )
-        end
+        refute @te_p.match?('1')
+        refute @te_c.match?({a: 1})
+        refute @te_p_with_c.match?(0)
+        refute @te_c_with_c.match?([1, 2, 3, 4, 5, 6])
       end
     end
 
     context "has an instance method #to_s that" do
       setup do
-        type_defs = YAML.load_file 'test/data/valid_type_defs.yml'
-        @types = TaipoTestHelper.create_types type_defs
-        @type_def_strings = YAML.load_file(
-                             'test/data/valid_type_defs_as_strings.yml')
+        valid_data = eval File.read('test/data/valid_defs.rb')
+        @valid_defs = valid_data.definitions
       end
 
       should "return the String representation" do
-        @type_def_strings.each.with_index do |t_str,index|
-          assert_equal(TaipoTestHelper.prepare_for_comparison(t_str), 
-                       Taipo.types_to_s(@types[index]))
+        @valid_defs.each do |v|
+          tes = Taipo::Parser.parse v
+          assert_equal(TaipoTestHelper.prepare_for_comparison(v),
+                       Taipo.types_to_s(tes))
         end
       end
     end

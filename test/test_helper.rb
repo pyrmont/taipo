@@ -94,4 +94,16 @@ module TaipoTestHelper
     end
     result
   end
+
+  class TestData < Array
+    def add(type_def, pass: [], fail: [])
+      self.push({ :def => type_def, :pass => pass, :fail => fail })
+    end
+
+    def definitions()
+      self.reduce([]) do |memo,el|
+        memo.push el[:def]
+      end
+    end
+  end
 end

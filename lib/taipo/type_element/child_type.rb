@@ -8,7 +8,12 @@ module Taipo
 
       # Initialize a new collection
       #
-      # @param components [Array<Taipo::TypeElement>] the components that will make up the ChildType
+      # @note The +components+ argument is two-dimensional array because the
+      #   element returned by an enumerator for a collection can consist of
+      #   multiple elements (eg. a Hash, where it consists of two elements).
+      #
+      # @param components [Array<Array<Taipo::TypeElement>>] the components that
+      #   will make up the ChildType
       #
       # @since 1.0.0
       # @api private
