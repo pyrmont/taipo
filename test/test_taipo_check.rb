@@ -6,6 +6,7 @@ class TaipoCheckTest < Minitest::Test
     setup do
       Taipo.alias = true
       extend Taipo::Check
+      @td = eval File.read('test/data/valid_defs.rb')
     end
 
     context "has an instance method #check that" do
@@ -25,11 +26,9 @@ class TaipoCheckTest < Minitest::Test
         # arg_types = { a: 'String', b: 'Integer' }
         # assert_equal [], check(binding, arg_types)
         # a && b # Hack to avoid the unused variable warning.
-        td = eval File.read('test/data/valid_defs.rb')
-        td.each do |t|
+        @td.each do |t|
           t[:pass].each do |p|
-            a = p
-            assert_equal [], check(binding, a: t[:def])
+            assert_equal [], check(binding, p: t[:def])
           end
         end
       end
@@ -42,24 +41,18 @@ class TaipoCheckTest < Minitest::Test
       end
 
       should "raise a Taipo::TypeError if the arguments are of the wrong type" do
-        invalid_inputs = [
-          { :@a => 'Integer', :@b => 'Integer' },
-          { :@a => 'String', :@b => 'String' },
-          { :@a => 'Integer', :@b => 'String' }
-        ]
-        invalid_inputs.each do |i|
-          assert_raises(Taipo::TypeError) { check(binding, i) }
+        @td.each do |t|
+          t[:fail].each do |f|
+            assert_raises(Taipo::TypeError) { check(binding, f: t[:def]) }
+          end
         end
       end
 
       should "with the false flag, return array of arguments of wrong type" do
-        invalid_inputs = [
-          [ [ :@a ], { :@a => 'Integer', :@b => 'Integer' } ],
-          [ [ :@b ], { :@a => 'String', :@b => 'String' } ],
-          [ [ :@a, :@b ], { :@a => 'Integer', :@b => 'String' } ]
-        ]
-        invalid_inputs.each do |i|
-          assert_equal i[0], check(binding, true, i[1])
+        @td.each do |t|
+          t[:fail].each do |f|
+            assert_equal [:f], check(binding, true, f: t[:def])
+          end
         end
       end
 

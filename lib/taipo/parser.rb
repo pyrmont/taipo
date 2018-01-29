@@ -35,7 +35,7 @@ module Taipo
 
         case c
         when '|'
-          unless attached? previous # content.empty? # Previous character must have been '>' or ')'.
+          unless attached? previous # Previous character must have been '>' or ')'.
             el = Taipo::TypeElement.new name: content
             content = ''
             elements = stack.pop
@@ -51,7 +51,7 @@ module Taipo
           first_component = Array.new
           stack.push first_component
         when '>'
-          if attached? previous # content.empty? # Previous character must have been '>' or ')'.
+          if attached? previous # Previous character must have been '>' or ')'.
             last_component = stack.pop
           else
             el = Taipo::TypeElement.new name: content.strip

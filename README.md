@@ -102,6 +102,14 @@ It's possible to specify a duck type by writing the instance method (or methods)
 check types, a: '#to_s', b: '(#foo, #bar)'
 ```
 
+#### Optional Types
+
+If `nil` is permitted as a value, the optional shorthand `?` can be appended to the end of a class name to form an optional type. Collections and constraints can follow as usual.
+
+```ruby
+check types, a: 'String?', b: 'Array?<Integer>', c: 'Integer?(min: 0)'
+```
+
 ### Collections
 
 Taipo can also check whether a variable has a collection of elements of the specified child type. A child type can consist of the same components as any other type (ie. a name, collection, constraint, sum).

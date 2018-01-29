@@ -36,6 +36,18 @@ module Taipo
     # parentheses can be omitted. For defining duck types that respond to
     # multiple methods, the parentheses are required.
     #
+    # ==== Optional Types
+    #
+    #   'String?', 'Array<Integer?>', 'Symbol?|String?'
+    #
+    # It is possible to specify an 'optional' type by appending a question mark
+    # to the name of the type. This shorthand functions similarly to defining a
+    # sum type with NilClass (the implementation of how optional types are
+    # checked is slightly different, however; see {Taipo::TypeElement#match?}).
+    # It is not possible to define an optional duck type. For that, either the
+    # implicit Object class should be specified (and then made optional), or a
+    # sum type should be used.
+    #
     # === Collections
     #
     #   'Array<Integer>', 'Hash<Symbol, String>', 'Array<Array<Float>>'

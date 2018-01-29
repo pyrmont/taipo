@@ -136,6 +136,7 @@ module Taipo
     # @since 1.0.0
     # @api private
     def match?(arg)
+      return true if optional? && arg.nil?
       match_class?(arg) && match_constraints?(arg) && match_child_type?(arg)
     end
 
@@ -150,12 +151,13 @@ module Taipo
     # @since 1.0.0
     # @api private
     def match_class?(arg)
-      if @name == 'Boolean'
+      actual_name = (optional?) ? @name[0..-2] : @name
+      if actual_name == 'Boolean'
         arg.is_a?(TrueClass) || arg.is_a?(FalseClass)
       else
-        msg = "Class to match #{@name} is not defined"
-        raise Taipo::SyntaxError, msg unless Object.const_defined?(@name)
-        arg.is_a? Object.const_get(@name)
+        msg = "Class to match #{actual_name} is not defined"
+        raise Taipo::SyntaxError, msg unless Object.const_defined?(actual_name)
+        arg.is_a? Object.const_get(actual_name)
       end
     end
 
@@ -199,6 +201,22 @@ module Taipo
       @constraints.all? do |c|
         c.constrain?(arg)
       end
+    end
+
+    # Check whether this element is an optional
+    #
+    # An optional type is a variation on a normal type that also matches +nil+.
+    # Taipo borrows the syntax used in some other languages of denoting
+    # optional types by appending a question mark to the end of the class name.
+    #
+    # @note This merely checks whether +@name+ ends in a question mark.
+    #
+    # @return [Boolean] the result
+    #
+    # @since 1.3.0
+    # @api private
+    def optional?
+      @name[-1] == '?'
     end
 
     # Return the String representation of this TypeElement

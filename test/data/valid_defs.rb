@@ -8,18 +8,18 @@ td.add 'Array<String>',
        fail: [[], [1], [nil], '', Object.new, nil]
 td.add 'Hash<Symbol,String>',
        pass: [{a: ''}, {a: 'foo', b: 'bar'}],
-       fail: [{}, {a: 1}, {'a': 'foo'}, {a: 'foo', b: 1}, {a: nil}, 
+       fail: [{}, {a: 1}, {'a' => 'foo'}, {a: 'foo', b: 1}, {a: nil}, 
               Object.new, nil]
 td.add 'Collection<Integer,String,Array<Integer>>',
        pass: [],
-       fail: [Object.new, nil]
+       fail: []
 td.add 'String|Float',
        pass: ['foo', 1.0, '', 0.0],
        fail: [:foo, 1, 0, Object.new, nil]
 td.add 'Array|Hash|Float',
        pass: [[1], {a: 1}, 1.0, [], {}, 0.0],
        fail: [1, Object.new, nil]
-td.add 'Array|Set|Point|Regexp',
+td.add 'Array|Symbol|Float|Regexp',
        pass: [],
        fail: [Object.new, nil]
 td.add 'Array<Array<String>>',
@@ -35,9 +35,9 @@ td.add 'Array<Integer>|String',
 td.add 'String|Integer|Array<Hash<Symbol,Object>>',
        pass: ['foo', 1, [{a: Object.new}], '', 0, [{a: ''}]],
        fail: [:foo, 1.0, {a: Object.new}, Object.new, nil]
-td.add 'String|Array<String|Integer>|Object',
-       pass: ['foo', ['foo'], [1], ['foo', 1], Object.new, '', [''], [0]],
-       fail: [:foo, [:foo], [1.0], nil]
+td.add 'String|Array<String|Integer>|Regexp',
+       pass: ['foo', ['foo'], [1], ['foo', 1], /woo/, '', [''], [0]],
+       fail: [:foo, [:foo], [1.0], Object.new, nil]
 td.add 'Boolean|Array<String|Hash<Symbol,Integer>|Array<String>>',
        pass: [true, false, ['foo', {a: 1}, ['foo']], [''], [{a: 0}], [['']]],
        fail: ['true', 'false', [:foo, [:a, 1], [:foo]], [Object.new],
@@ -103,6 +103,14 @@ td.add ':foo|:bar',
 td.add 'Array<:foo>',
        pass: [[:foo], [:foo, :foo]],
        fail: [:foo, [:bar], 1, Object.new, nil]
-td.add 'String?'
+td.add 'String?',
+       pass: ['foo', 'foo bar', nil],
+       fail: [:foo, 1, Object.new]
+td.add 'String?|Integer?',
+       pass: ['foo', 1, nil],
+       fail: [:foo, 1.0, Object.new]
+td.add 'Array<Integer?>',
+       pass: [[1], [1, 2], [nil], [nil, 1]],
+       fail: ['foo', ['foo'], [1, 'foo'], [], Object.new, nil]
 
 td
