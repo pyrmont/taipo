@@ -91,7 +91,7 @@ The information in this README is only meant as an introduction. [More informati
 The simplest case is to write the name of a class. For example, `'String'`. Inherited class names can also be used.
 
 ```ruby
-check types, a: 'String', b: 'Numeric'
+check types, a: 'String', b: 'Numeric', c: 'Foo::Bar'
 ```
 
 #### Duck Types

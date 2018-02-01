@@ -11,9 +11,10 @@ module Taipo
     #
     # === Names
     #
-    #   'String', 'Numeric'
+    #   'String', 'Numeric', 'Foo::Bar'
     #
-    # A name should be the name of a class or a module.
+    # A name should be the name of a class or a module. A name can include a
+    # namespace.
     #
     # The validater does not check whether the name represents a valid name in
     # the current context nor does it check whether the name complies with
