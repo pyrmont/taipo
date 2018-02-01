@@ -68,6 +68,7 @@ module Taipo
       end
 
       stack = process_end stack, name: content
+
       stack.result
     end
 

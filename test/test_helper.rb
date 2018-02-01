@@ -19,11 +19,14 @@ module TaipoTestHelper
     previous = ''
     paren = :outside
     const = :inactive
-    str.each_char do |c|
+    chars = str.chars
+    i = 0
+    while (i < chars.size)
+      c = chars[i]
       case c
       when '('
         paren = :inside
-        c = 'Object(' if previous.empty? || previous == '|' || previous == '<'  
+        c = 'Object(' if previous.empty? || previous == '|' || previous == '<'
       when ')'
         paren = :outside
       when '#'
@@ -33,8 +36,13 @@ module TaipoTestHelper
         end
       when ':'
         if paren == :outside
-          c = 'Object(val:' + c
-          const = :active
+          if chars[i+1] == ':'
+            c = '::'
+            i += 1
+          else
+            c = 'Object(val:' + c
+            const = :active
+          end
         end
       when '|', '>'
         if const == :active
@@ -44,6 +52,7 @@ module TaipoTestHelper
       end
       result += c
       previous = c
+      i += 1
     end
     result = (const == :active) ? result + ')' : result
   end

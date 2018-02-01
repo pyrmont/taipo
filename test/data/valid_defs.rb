@@ -8,7 +8,7 @@ td.add 'Array<String>',
        fail: [[], [1], [nil], '', Object.new, nil]
 td.add 'Hash<Symbol,String>',
        pass: [{a: ''}, {a: 'foo', b: 'bar'}],
-       fail: [{}, {a: 1}, {'a' => 'foo'}, {a: 'foo', b: 1}, {a: nil}, 
+       fail: [{}, {a: 1}, {'a' => 'foo'}, {a: 'foo', b: 1}, {a: nil},
               Object.new, nil]
 td.add 'Collection<Integer,String,Array<Integer>>',
        pass: [],
@@ -24,7 +24,7 @@ td.add 'Array|Symbol|Float|Regexp',
        fail: [Object.new, nil]
 td.add 'Array<Array<String>>',
        pass: [[['foo', 'bar'], ['foo', 'bar']], [['']]],
-       fail: [['foo'], [[['foo']]], [['foo', :bar]], [['foo'], [nil]], 
+       fail: [['foo'], [[['foo']]], [['foo', :bar]], [['foo'], [nil]],
               Object.new, nil]
 td.add 'String|Array<Integer>',
        pass: ['foo', [1], '', [0]],
@@ -112,5 +112,26 @@ td.add 'String?|Integer?',
 td.add 'Array<Integer?>',
        pass: [[1], [1, 2], [nil], [nil, 1]],
        fail: ['foo', ['foo'], [1, 'foo'], [], Object.new, nil]
+td.add '::String',
+       pass: ['This is a test.', ''],
+       fail: [:foo, Object.new, nil]
+td.add 'Foo::Bar',
+       pass: [],
+       fail: []
+td.add 'Foo::Bar<Integer>',
+       pass: [],
+       fail: []
+td.add 'Foo::Bar(len: 1)',
+       pass: [],
+       fail: []
+td.add '::Bar',
+       pass: [],
+       fail: []
+td.add '::Bar<Integer>',
+       pass: [],
+       fail: []
+td.add '::Bar(len: 1)',
+       pass: [],
+       fail: []
 
 td

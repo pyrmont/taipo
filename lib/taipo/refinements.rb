@@ -23,7 +23,7 @@ module Taipo
       # @since 1.4.0
       # @api private
       def bare_constraint?
-        self[0] == ':' || self[0] == '#'
+        (self[0] == ':' && self[1] != ':') || self[0] == '#'
       end
     end
   end

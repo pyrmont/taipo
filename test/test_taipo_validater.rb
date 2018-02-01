@@ -13,7 +13,7 @@ class TaipoValidaterTest < Minitest::Test
         valid_data = eval File.read('test/data/valid_defs.rb')
         @valid_inputs = valid_data.definitions
         invalid_data = eval File.read('test/data/invalid_defs.rb')
-        @invalid_strings = invalid_data.definitions.select do |d| 
+        @invalid_strings = invalid_data.definitions.select do |d|
                              d.is_a? String
                            end
         @invalid_nonstrings = invalid_data.definitions.select do |d|

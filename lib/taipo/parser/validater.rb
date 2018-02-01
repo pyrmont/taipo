@@ -120,8 +120,8 @@ module Taipo
     #   ':foo|:bar', ':one|:two|:three'
     #
     # It's possible to approximate the enum idiom available in many languages
-    # by creating a sum type consisting of Symbols. As a convenience, Taipo 
-    # parses these values as constraints on the Object class. In other words, 
+    # by creating a sum type consisting of Symbols. As a convenience, Taipo
+    # parses these values as constraints on the Object class. In other words,
     # +':foo|:bar'+ is really +'Object(val: :foo)|Object(val: :bar)'+.
     #
     # @since 1.0.0
@@ -143,107 +143,89 @@ module Taipo
         msg = "The string to be checked was empty."
         raise Taipo::SyntaxError, msg if str.empty?
 
-        status_array = [ :bar, :lab, :rab, :lpr, :rpr, :hsh, :cln, :sls, :qut,
-                         :cma, :spc, :oth, :end ]
-        counter_array = [ [ :angle, :paren, :const ],
-                          { angle: '>', paren: ')', const: ":' or '#" } ]
+        status_array = [ :bar, :lab, :rab, :lpr, :hsh, :cln, :cma, :spc_bar,
+                         :spc_rab, :spc_rpr, :spc_cma, :spc_oth, :mth, :sym,
+                         :nme, :end ]
+        counter_array = [ [ :angle ], { angle: '>' } ]
+
         state = Taipo::Parser::SyntaxState.new(status_array, counter_array)
+        state.prohibit_all except: [ :lpr, :hsh, :cln, :nme ]
 
         i = 0
         chars = str.chars
-        str_length = chars.size
 
-        state.prohibit_all except: [ :lpr, :hsh, :cln, :oth ]
-
-        while (i < str_length)
+        while (i < chars.size)
           msg = "The string '#{str}' has an error here: #{str[0, i+1]}"
           case chars[i]
+          when ')', '/', '"'
+            raise Taipo::SyntaxError, msg
           when '|' # bar
             conditions = [ state.allowed?(:bar) ]
             raise Taipo::SyntaxError, msg unless conditions.all?
-            state.enable :lab
-            state.enable :lpr
-            state.prohibit_all except: [ :lpr, :hsh, :cln, :oth ]
+            state.prohibit_all except: [ :lpr, :hsh, :cln, :spc_bar, :nme ]
           when '<' # lab
             conditions = [ state.allowed?(:lab) ]
             raise Taipo::SyntaxError, msg unless conditions.all?
-            state.prohibit_all except: [ :lpr, :hsh, :cln, :oth ]
+            state.prohibit_all except: [ :lpr, :hsh, :cln, :nme ]
             state.increment :angle
           when '>' # rab
             conditions = [ state.allowed?(:rab), state.inside?(:angle) ]
             raise Taipo::SyntaxError, msg unless conditions.all?
-            state.prohibit_all except: [ :bar, :rab, :lpr, :end ]
+            state.prohibit_all except: [ :bar, :rab, :lpr, :spc_rab, :end ]
             state.decrement :angle
           when '(' # lpr
-            conditions = [ state.allowed?(:lpr), state.outside?(:paren) ]
+            conditions = [ state.allowed?(:lpr) ]
             raise Taipo::SyntaxError, msg unless conditions.all?
-            state.prohibit_all except: [ :hsh, :oth ]
-            state.increment :paren
-            state.increment :const
-          when ')' # rpr
-            conditions = [ state.allowed?(:rpr), state.inside?(:paren) ]
-            raise Taipo::SyntaxError, msg unless conditions.all?
-            state.prohibit_all except: [ :bar, :rab, :end ]
-            state.decrement :paren
+            i = Taipo::Parser::Validater.validate_constraints(str, start: i+1)
+            state.prohibit_all except: [ :bar, :rab, :spc_rpr, :end ]
           when '#' # hsh
             conditions = [ state.allowed?(:hsh) ]
             raise Taipo::SyntaxError, msg unless conditions.all?
-            if state.outside? :paren
-              state.disable :lab
-              state.disable :lpr
-              state.prohibit_all except: [ :oth ]
-            else
-              state.prohibit_all except: [ :oth ]
-              state.decrement :const
-            end
+            state.prohibit_all except: [ :mth ]
           when ':' # cln
-            conditions = [ state.allowed?(:cln) ]
-            raise Taipo::SyntaxError, msg unless conditions.all?
-            if state.outside? :paren
-              state.disable :lab
-              state.disable :lpr
-              state.prohibit_all except: [ :oth ]
+            if chars[i+1] == ':' && chars[i+2] != ':'
+              conditions = [ state.allowed?(:nme) ]
+              raise Taipo::SyntaxError, msg unless conditions.all?
+              state.prohibit_all except: [ :nme ]
+              i = i + 1
             else
-              if state.count(:const) == 0 # This is a symbol.
-                state.prohibit_all except: [ :qut, :oth ]
-              else
-                state.prohibit_all except: [ :cln, :sls, :qut, :spc, :oth ]
-                state.decrement :const
-              end
+              conditions = [ state.allowed?(:cln) ]
+              raise Taipo::SyntaxError, msg unless conditions.all?
+              state.prohibit_all except: [ :sym ]
             end
-          when '/' #sls
-            conditions = [ state.allowed?(:sls), state.inside?(:paren),
-                           state.outside?(:const) ]
-            raise Taipo::SyntaxError, msg unless conditions.all?
-            i = Taipo::Parser::Validater.validate_regex(str, start: i+1)
-            state.prohibit_all except: [ :rpr, :cma ]
-          when '"' #qut
-            conditions = [ state.allowed?(:qut), state.inside?(:paren),
-                           state.outside?(:const) ]
-            raise Taipo::SyntaxError, msg unless conditions.all?
-            i = Taipo::Parser::Validater.validate_string(str, start: i+1)
-            state.prohibit_all except: [ :rpr, :cma ]
           when ',' # cma
-            conditions = [ state.allowed?(:cma),
-                           state.inside?(:angle) || state.inside?(:paren) ]
+            conditions = [ state.allowed?(:cma), state.inside?(:angle)]
             raise Taipo::SyntaxError, msg unless conditions.all?
-            state.prohibit_all except: [ :spc, :oth ]
-            state.increment :const if state.inside?(:paren)
+            state.prohibit_all except: [ :hsh, :cln, :spc_cma, :nme ]
           when ' ' # spc
-            conditions = [ state.allowed?(:spc) ]
-            raise Taipo::SyntaxError, msg unless conditions.all?
-            state.prohibit_all except: [ :hsh, :cln, :sls, :qut, :oth ]
+            conditions = [ state.allowed?(:spc_bar), state.allowed?(:spc_cma),
+                           state.allowed?(:spc_oth) ]
+            raise Taipo::SyntaxError, msg unless conditions.any?
+            if state.allowed?(:spc_bar) || state.allowed?(:spc_cma)
+              state.prohibit_all except: [ :hsh, :cln, :nme ]
+            elsif state.allowed?(:spc_rab) || state.allowed?(:spc_rpr)
+              state.prohibit_all except: [ :bar, :hsh, :cln, :nme ]
+            elsif state.allowed?(:spc_oth)
+              state.prohibit_all except: [ :bar ]
+            end
           else # oth
-            conditions = [ state.allowed?(:oth) ]
-            raise Taipo::SyntaxError, msg unless conditions.all?
-            if state.inside? :paren
-              state.allow_all except: [ :hsh, :spc ]
-            else
-              state.allow_all except: [ :hsh, :cln, :spc ]
+            conditions = [ state.allowed?(:mth), state.allowed?(:sym),
+                           state.allowed?(:nme) ]
+            raise Taipo::SyntaxError, msg unless conditions.any?
+            if state.allowed?(:mth)
+              state.prohibit_all except: [ :bar, :rab, :cma, :spc_oth, :mth,
+                                           :end ]
+            elsif state.allowed?(:sym)
+              state.prohibit_all except: [ :bar, :rab, :cma, :spc_oth, :sym,
+                                           :end ]
+            elsif state.allowed?(:nme)
+              state.prohibit_all except: [ :bar, :lab, :rab, :lpr, :cma,
+                                           :spc_oth, :nme, :end ]
             end
           end
           i += 1
         end
+
         msg_end = "The string '#{str}' ends with an illegal character."
         raise Taipo::SyntaxError, msg_end unless state.allowed?(:end)
 
@@ -252,9 +234,93 @@ module Taipo
         raise Taipo::SyntaxError, msg_bal unless missing.size == 0
       end
 
+      # Check +str+ is a valid set of constraints
+      #
+      # @param str [String] the type definition
+      # @param start [Integer] the index within the type definition where this
+      #   set of constraints begins
+      #
+      # @return [Integer] the index within the type definition where this set of
+      #   set of constraints end
+      #
+      # @raise [Taipo::SyntaxError] if +str+ is not a valid set of constraints
+      #
+      # @since 1.4.0
+      # @api private
+      def self.validate_constraints(str, start: 0)
+        status_array = [ :rpr, :hsh, :cln, :sls, :qut, :cma, :spc, :oth ]
+        counter_array = [ [ :const ], { const: ":' or '#" } ]
+
+        state = SyntaxState.new(status_array, counter_array)
+        state.prohibit_all except: [ :hsh, :oth ]
+        state.increment(:const)
+
+        i = start
+        chars = str.chars
+
+        while (i < chars.size)
+          msg = "The string '#{str}' has an error here: #{str[0, i+1]}"
+          case chars[i]
+          when '|', '<', '>', '('
+            raise Taipo::SyntaxError, msg
+          when ')' # rpr
+            conditions = [ state.allowed?(:rpr) ]
+            raise Taipo::SyntaxError, msg unless conditions.all?
+            break # The constraints have ended.
+          when '#' # hsh
+            conditions = [ state.allowed?(:hsh) ]
+            raise Taipo::SyntaxError, msg unless conditions.all?
+            state.prohibit_all except: [ :oth ]
+            state.decrement :const
+          when ':' # cln
+            conditions = [ state.allowed?(:cln) ]
+            raise Taipo::SyntaxError, msg unless conditions.all?
+            if state.count(:const) == 0 # This is a symbol.
+              state.prohibit_all except: [ :qut, :oth ]
+            else
+              state.prohibit_all except: [ :cln, :sls, :qut, :spc, :oth ]
+              state.decrement :const
+            end
+          when '/' #sls
+            conditions = [ state.allowed?(:sls), state.outside?(:const) ]
+            raise Taipo::SyntaxError, msg unless conditions.all?
+            i = Taipo::Parser::Validater.validate_regex(str, start: i+1)
+            state.prohibit_all except: [ :rpr, :cma ]
+          when '"' #qut
+            conditions = [ state.allowed?(:qut), state.outside?(:const) ]
+            raise Taipo::SyntaxError, msg unless conditions.all?
+            i = Taipo::Parser::Validater.validate_string(str, start: i+1)
+            state.prohibit_all except: [ :rpr, :cma ]
+          when ',' # cma
+            conditions = [ state.allowed?(:cma) ]
+            raise Taipo::SyntaxError, msg unless conditions.all?
+            state.prohibit_all except: [ :spc, :oth ]
+            state.increment :const
+          when ' ' # spc
+            conditions = [ state.allowed?(:spc) ]
+            raise Taipo::SyntaxError, msg unless conditions.all?
+            state.prohibit_all except: [ :hsh, :cln, :sls, :qut, :oth ]
+          else # oth
+            conditions = [ state.allowed?(:oth) ]
+            raise Taipo::SyntaxError, msg unless conditions.all?
+            state.allow_all except: [ :hsh, :spc ]
+          end
+          i += 1
+        end
+
+        msg = "The string '#{str}' is missing a ')'."
+        raise Taipo::SyntaxError, msg if i == chars.size
+
+        missing = state.unbalanced
+        msg_bal = "The string '#{str}' is missing a '#{missing.first}'."
+        raise Taipo::SyntaxError, msg_bal unless missing.size == 0
+
+        i
+      end
+
       # Check +str+ is a valid regular expression
       #
-      # @param str [String] a regular expression delimited by '/'
+      # @param str [String] the type definition
       # @param start [Integer] the index within the type definition where this
       #   regex begins
       #
@@ -308,12 +374,13 @@ module Taipo
 
       # Check +str+ is a valid string
       #
-      # @param str [String] a string delimited by '"'
+      # @param str [String] the type definition
       # @param start [Integer] the index within the type definition where this
       #   string begins
       #
       # @return [Integer] the index within the type definition where this
       #   string ends
+      #
       # @raise [Taipo::SyntaxError] if +str+ is not a valid string
       #
       # @since 1.0.0
