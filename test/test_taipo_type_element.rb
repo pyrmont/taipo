@@ -15,19 +15,21 @@ class TaipoTypeElementTest < Minitest::Test
 
       should "initialise with a valid class name and child type" do
         component = Taipo::TypeElement.new(name: 'Integer')
-        ct = Taipo::TypeElement::ChildType.new([component])
-        te = Taipo::TypeElement.new(name: @valid_name, child_type: ct)
+        ct = Taipo::TypeElement::Children.new([component])
+        te = Taipo::TypeElement.new(name: @valid_name, children: ct)
         assert_kind_of Taipo::TypeElement, te
       end
 
       should "initialise with a valid class name, child type and constraints" do
-        component = Taipo::TypeElement.new(name: 'Integer')
-        child_type = Taipo::TypeElement::ChildType.new([component])
+        te = Taipo::TypeElement.new(name: 'Integer')
+        child = Taipo::TypeElements.new([te])
+        children = Taipo::TypeElement::Children.new([child])
         constraint = Taipo::TypeElement::Constraint.new(name: 'min',
-                                                            value: '0')
+                                                        value: '0')
+        constraints = Taipo::TypeElement::Constraints.new([constraint])
         te = Taipo::TypeElement.new(name: @valid_name,
-                                    child_type: child_type,
-                                    constraints: [constraint])
+                                    children: children,
+                                    constraints: constraints)
         assert_kind_of Taipo::TypeElement, te
       end
 
@@ -38,16 +40,16 @@ class TaipoTypeElementTest < Minitest::Test
         end
       end
 
-      should "raise an ArgumentError if argument 'child_type' is empty" do
-        invalid_child_type = Taipo::TypeElement::ChildType.new
+      should "raise an ArgumentError if argument 'children' is empty" do
+        invalid_children = Taipo::TypeElement::Children.new
         assert_raises(ArgumentError) do
           Taipo::TypeElement.new(name: @valid_name,
-                                 child_type: invalid_child_type)
+                                 children: invalid_children)
         end
       end
 
       should "raise an ArgumentError if argument 'constraints' is empty" do
-        invalid_constraints = []
+        invalid_constraints = Taipo::TypeElement::Constraints.new
         assert_raises(ArgumentError) do
           Taipo::TypeElement.new(name: @valid_name,
                                  constraints: invalid_constraints)
@@ -60,10 +62,10 @@ class TaipoTypeElementTest < Minitest::Test
           assert_raises(TypeError) { Taipo::TypeElement.new(name: i) }
         end
 
-        invalid_child_types = [ Object.new, String.new ]
-        invalid_child_types.each do |i|
+        invalid_children = [ Object.new, String.new ]
+        invalid_children.each do |i|
           assert_raises(TypeError) do
-            Taipo::TypeElement.new(name: @valid_name, child_type: i)
+            Taipo::TypeElement.new(name: @valid_name, children: i)
           end
         end
 
@@ -136,7 +138,7 @@ class TaipoTypeElementTest < Minitest::Test
         
         @te_c = Taipo::TypeElement.new(
                   name: 'Array',
-                  child_type: Taipo::TypeElement::ChildType.new([[@te_p]])
+                  children: Taipo::TypeElement::Children.new([[@te_p]])
                 )
 
         @te_p_with_c = @te_p.dup

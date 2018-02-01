@@ -1,5 +1,7 @@
 require 'taipo/exceptions'
-require 'taipo/type_element/child_type'
+require 'taipo/type_elements'
+require 'taipo/type_element/children'
+require 'taipo/type_element/constraints'
 require 'taipo/type_element/constraint'
 
 module Taipo
@@ -16,13 +18,13 @@ module Taipo
     # @api private
     attr_accessor :name
 
-    # The child type collection for this element
+    # The child types for this element
     #
-    # @since 1.0.0
+    # @since 1.4.0
     # @api private
-    attr_accessor :child_type
+    attr_accessor :children
 
-    # The constraint collection for this element
+    # The constraints for this element
     #
     # @since 1.0.0
     # @api private
@@ -30,54 +32,20 @@ module Taipo
 
     # Initialize a new type element
     #
-    # @param name [String] the name of this type
-    # @param child_type [Taipo::TypeElement::ChildType|NilClass] the child type
-    #   collection for this element
-    # @param constraints [Array<Taipo::TypeElement::Constraints>|NilClass] an
-    #   array of constraints for this element
-    #
-    # @raise [::TypeError] if +name+, +child_type+ or +constraints+ was of the
-    #   wrong type
-    # @raise [::ArgumentError] if +name+, +child_type+ or +constraints+ was
-    #   blank or empty, or +child_type+ or +constraints+ was non-nil and this
-    #   is a duck type (ie. a method the type responds to) or a symbol
-    #
     # @since 1.0.0
     # @api private
-    def initialize(name:, child_type: nil, constraints: nil)
-      msg = 'Argument name was not a String.'
-      raise ::TypeError, msg unless name.is_a? String
-      msg = 'Argument name was an empty string.'
-      raise ::ArgumentError, msg if name.empty?
-      msg = 'Argument child_type was not Taipo::TypeElement::ChildType.'
-      raise ::TypeError, msg unless (
-                             child_type.nil? ||
-                             child_type.is_a?(Taipo::TypeElement::ChildType)
-                           )
-      msg = 'Argument child_type was empty.'
-      raise ::ArgumentError, msg if child_type&.empty?
-      msg = 'Argument constraints was not an Array.'
-      raise ::TypeError, msg unless (constraints.nil? || constraints.is_a?(Array))
-      msg = 'Argument constraints was empty.'
-      raise ::ArgumentError, msg if constraints&.empty?
-
-      if Taipo.instance_method?(name) || Taipo.symbol?(name)
-        msg = 'Argument child_type should have been nil.'
-        raise ::ArgumentError, msg unless child_type.nil?
-        msg = 'Argument constraints should have been nil.'
-        raise ::ArgumentError, msg unless constraints.nil?
-
-        constraints = if Taipo.instance_method? name
-                        [Taipo::TypeElement::Constraint.new(name: nil, 
-                                                            value: name[1..-1])]  
-                      elsif Taipo.symbol? name
-                        [Taipo::TypeElement::Constraint.new(name: 'val',
-                                                            value: name)]
-                      end
-        name = 'Object'
-      end
+    def initialize(name:, children: nil, constraints: nil)
+      raise ::TypeError unless name.is_a? String
+      raise ::TypeError unless children.nil? || 
+        children.is_a?(Taipo::TypeElement::Children)
+      raise ::TypeError unless constraints.nil? || 
+        constraints.is_a?(Taipo::TypeElement::Constraints)
+      raise ::ArgumentError if name.empty?
+      raise ::ArgumentError if !children.nil? && children.empty?
+      raise ::ArgumentError if !constraints.nil? && constraints.empty?
+      
       @name = name
-      @child_type = child_type
+      @children = children
       @constraints = constraints
     end
 
@@ -95,7 +63,7 @@ module Taipo
       msg = 'Object to be compared must be of type Taipo::TypeElement.'
       raise ::TypeError, msg unless comp.is_a? Taipo::TypeElement
 
-      @name == comp.name && @child_type == comp.child_type
+      @name == comp.name && @children == comp.children
     end
 
     # Set the element's constraints to +csts+
@@ -137,7 +105,8 @@ module Taipo
     # @api private
     def match?(arg)
       return true if optional? && arg.nil?
-      match_class?(arg) && match_constraints?(arg) && match_child_type?(arg)
+      
+      match_class?(arg) && match_constraints?(arg) && match_children?(arg)
     end
 
     # Check if the class of the argument itself matches this element
@@ -167,10 +136,10 @@ module Taipo
     #
     # @return [Boolean] the result
     #
-    # @since 1.0.0
+    # @since 1.4.0
     # @api private
-    def match_child_type?(arg)
-      self_childless = @child_type.nil?
+    def match_children?(arg)
+      self_childless = @children.nil?
       arg_childless = !arg.is_a?(Enumerable) || arg.count == 0
       return true if self_childless
       return false if !self_childless && arg_childless
@@ -178,11 +147,11 @@ module Taipo
       arg.all? do |a|
         if !arg.is_a?(Array) && a.is_a?(Array)
           a.each.with_index.reduce(nil) do |memo,(component,index)|
-            result = @child_type[index].any? { |c| c.match? component }
+            result = @children[index].any? { |c| c.match? component }
             (memo.nil?) ? result : memo && result
           end
         else # The elements of this collection have no components
-          @child_type.first.any? { |c| c.match? a }
+          @children.first.any? { |c| c.match? a }
         end
       end
     end
@@ -198,9 +167,7 @@ module Taipo
     def match_constraints?(arg)
       return true if @constraints.nil?
 
-      @constraints.all? do |c|
-        c.constrain?(arg)
-      end
+      @constraints.all? { |c| c.constrain?(arg) }
     end
 
     # Check whether this element is an optional
@@ -225,16 +192,9 @@ module Taipo
     # @api private
     def to_s
       name_str = @name
-      child_type_str = (@child_type.nil?) ? '' : @child_type.to_s
-      constraints_str = if @constraints.nil?
-                          ''
-                        else
-                          inner = @constraints.reduce('') do |memo,c|
-                                    (memo == '') ? c.to_s : memo + ',' + c.to_s
-                                  end
-                          '(' + inner + ')'
-                        end
-      name_str + child_type_str + constraints_str
+      children_str = (@children.nil?) ? '' : @children.to_s
+      constraints_str = (@constraints.nil?) ? '' : @constraints.to_s
+      name_str + children_str + constraints_str
     end
   end
 end

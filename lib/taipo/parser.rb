@@ -1,6 +1,12 @@
 require 'taipo/exceptions'
+require 'taipo/parser/stack'
 require 'taipo/parser/validater'
+require 'taipo/refinements'
+require 'taipo/type_elements'
 require 'taipo/type_element'
+require 'taipo/type_element/children'
+require 'taipo/type_element/constraints'
+require 'taipo/type_element/constraint'
 
 module Taipo
 
@@ -8,11 +14,13 @@ module Taipo
   # @since 1.0.0
   module Parser
 
-    # Return an array of Taipo::TypeElements based on +str+
+    using Taipo::Refinements
+
+    # Return a Taipo::TypeElements object based on +str+
     #
     # @param str [String] a type definition
     #
-    # @return [Array<Taipo:TypeElement>] the result
+    # @return [Taipo:TypeElements] the result
     #
     # @raise [::TypeError] if +str+ is not a String
     # @raise [Taipo::SyntaxError] if +str+ is not a valid type definition
@@ -20,199 +28,206 @@ module Taipo
     # @since 1.0.0
     def self.parse(str)
       Taipo::Parser::Validater.validate str
-
+      
+      stack = Taipo::Parser::Stack.new
+      i = 0
+      subject = :implied
+      chars = str.chars
       content = ''
-      previous = ''
-      is_fallthrough = false
-      fallthroughs = [ '/', '"' ]
-      closing_symbol = ''
-      stack = Array.new
-      elements = Array.new
-      stack.push elements
-
-      str.each_char do |c|
-        c = '+' + c if is_fallthrough
-
-        case c
-        when '|'
-          unless attached? previous # Previous character must have been '>' or ')'.
-            el = Taipo::TypeElement.new name: content
-            content = ''
-            elements = stack.pop
-            elements.push el
-            stack.push elements
-          end
-        when '<'
-          el = Taipo::TypeElement.new name: content
-          content = ''
-          stack.push el
-          child_type = Taipo::TypeElement::ChildType.new
-          stack.push child_type
-          first_component = Array.new
-          stack.push first_component
-        when '>'
-          if attached? previous # Previous character must have been '>' or ')'.
-            last_component = stack.pop
-          else
-            el = Taipo::TypeElement.new name: content.strip
-            content = ''
-            last_component = stack.pop
-            last_component.push el
-          end
-          child_type = stack.pop
-          child_type.push last_component
-          parent_el = stack.pop
-          parent_el.child_type = child_type
-          elements = stack.pop
-          elements.push parent_el
-          stack.push elements
-        when '('
-          if unattached? previous
-            el = Taipo::TypeElement.new name: 'Object'
-            content = ''
-          elsif attached_collection? previous # Previous character must have been '>'.
-            elements = stack.pop
-            el = elements.pop
-            stack.push elements
-          else
-            el = Taipo::TypeElement.new name: content
-            content = ''
-          end
-          stack.push el
-          cst_collection = Array.new
-          stack.push cst_collection
-        when '#'
-          if unattached? previous 
-            content = '#'
-          else
-            cst = Taipo::TypeElement::Constraint.new
-            content = ''
-            cst_collection = stack.pop
-            cst_collection.push cst
-            stack.push cst_collection
-          end
-        when ':'
-          if unattached? previous 
-            content = ':'
-          elsif content.strip.empty?
-            content = ':'
-          else
-            content = content
-            cst = Taipo::TypeElement::Constraint.new name: content.strip
-            content = ''
-            cst_collection = stack.pop
-            cst_collection.push cst
-            stack.push cst_collection
-          end
-        when ',' # We could be inside a collection or a set of constraints
-          if inside_collection? stack
-            previous_component = stack.pop
-            el = Taipo::TypeElement.new name: content.strip
-            content = ''
-            previous_component.push el
-            child_type = stack.pop
-            child_type.push previous_component
-            stack.push child_type
-            next_component = Array.new
-            stack.push next_component
-          else
-            cst_collection = stack.pop
-            cst = cst_collection.pop
-            cst.value = content.strip
-            content = ''
-            cst_collection.push cst
-            stack.push cst_collection
-          end
-        when ')'
-          cst_collection = stack.pop
-          cst = cst_collection.pop
-          cst.value = content.strip
-          content = ''
-          cst_collection.push cst
-          el = stack.pop
-          el.constraints = cst_collection
-          elements = stack.pop
-          elements.push el
-          stack.push elements
-        else
-          if is_fallthrough
-            c = c[1]
-            is_fallthrough = false if c == closing_symbol
-          elsif fallthroughs.any? { |f| f == c }
-            is_fallthrough = true
-            closing_symbol = c
-          end
-          content = content + c
-        end
-        previous = c
-      end
-
-      unless content.empty?
-        el = Taipo::TypeElement.new name: content
-        elements = stack.pop
-        elements.push el
-        stack.push elements
-      end
-
-      stack.pop
-    end
+      
+      while (i < chars.size)
+        reset = true
   
-    # Check whether the current element is 'attached' to anything
-    #
-    # This check is performed by checking whether +char+ is the final character
-    # in a collection or constraint.
-    #
-    # @param char [String] the character to use in the test
-    #
-    # @return [Boolean] the result
-    #
-    # @since 1.2.0
-    # @api private
-    def self.attached?(char)
-      char == '>' || char == ')'
+        case chars[i]
+        when ' '
+          i += 1
+          next
+        when '|'
+          stack = process_sum stack, name: content
+          subject = :implied
+        when '<'
+          stack = process_collection :open, stack, name: content
+          subject = :implied
+        when '>'
+          stack = process_collection :close, stack, name: content
+          subject = :made
+        when ','
+          stack = process_component stack, name: content
+          subject = :implied
+        when '('
+          stack = process_subject stack, name: content, subject: subject
+          stack, i = process_constraints stack, chars: chars, index: i+1
+        else
+          reset = false
+          subject = :unmade
+        end
+
+        content = (reset) ? '' : content + chars[i]
+        i += 1
+      end
+
+      stack = process_end stack, name: content
+      stack.result
     end
 
-    # Check whether the current element is 'attached' to a collection
-    #
-    # Like {self.attached?}, this check is performed by checking +char+. In
-    # this case, the check is whether +char+ is the final character in a
-    # collection.
-    #
-    # @param char [String] the character to use in the test
-    #
-    # @return [Boolean] the result
-    #
-    # @since 1.2.0
+    # @since 1.4.0
     # @api private
-    def self.attached_collection?(char)
-      char == '>'
+    def self.parse_constraint(str)
+      str.strip!
+      in_name = nil
+      name = ''
+      content = ''
+      str.each_char do |c|
+        if c == '#' && in_name.nil?
+          name = Taipo::TypeElement::Constraint::METHOD
+          in_name = false
+        elsif c == ':' && in_name.nil?
+          name = 'val'
+          content = content + c
+          in_name = false
+        elsif c == ':' && in_name
+          name = content
+          content = ''
+          in_name = false
+        else
+          content = content + c
+          in_name = true if in_name.nil?
+        end
+      end
+      value = content.strip
+      return name, value
     end
 
-    # Check if the parser is inside a collection
-    #
-    # @param stack [Array] the stack of parsed elements
-    #
-    # @return [Boolean] the result
-    #
-    # @since 1.0.0
+    # @since 1.4.0
     # @api private
-    def self.inside_collection?(stack)
-      stack[-2]&.class == Taipo::TypeElement::ChildType
+    def self.process_name(stack, name:)
+      if name.bare_constraint?
+        chars = "(#{name})".chars
+        stack = process_subject stack, name: '', subject: :implied
+        stack, i = process_constraints stack, chars: chars, index: 1 
+        stack
+      else
+        stack.add_element name: name
+      end
     end
 
-    # Check whether the current element is 'unattached' to anything
-    #
-    # This check checks whether +char+ represents the beginning of a discrete
-    # type definition.
-    #
-    # @param char [String] the character to use in the test
-    #
-    # @return [Boolean] the result
-    #
-    # @since 1.2.0
+    # @since 1.4.0
     # @api private
-    def self.unattached?(char)
-      char.empty? || char == '|' || char == '<'
+    def self.process_sum(stack, name:)
+      return stack if name.empty?
+      
+      process_name stack, name: name
+    end
+
+    # @since 1.4.0
+    # @api private
+    def self.process_collection(direction, stack, name:)
+      case direction
+      when :open
+        stack = process_name stack, name: name
+        stack.add_children
+      when :close
+        stack = process_name stack, name: name unless name.empty?
+        children = stack.remove_children
+        stack.update_element :children=, children
+      end
+    end
+
+    # @since 1.4.0
+    # @api private
+    def self.process_component(stack, name:)
+      stack = process_name stack, name: name
+      stack.add_child
+    end
+
+    # @since 1.4.0
+    # @api private
+    def self.process_subject(stack, name:, subject:)
+      case subject
+      when :made
+        stack
+      when :unmade
+        process_name stack, name: name
+      when :implied
+        process_name stack, name: 'Object'
+      end
+    end
+
+    # @since 1.4.0
+    # @api private
+    def self.process_constraints(stack, chars:, index:)
+      stack.add_constraints
+
+      inside = { ss: false, ds: false, re: false, esc: false }
+      content = ''
+
+      while (index < chars.size)
+        skip, inside = escape?(chars[index], inside)
+        if skip
+          content = content + chars[index]
+          index += 1
+          next
+        end
+
+        case chars[index]
+        when ')'
+          stack = process_constraint stack, raw: content
+          break
+        when ','
+          stack = process_constraint stack, raw: content
+          content = ''
+        else
+          content = content + chars[index]
+        end
+
+        index += 1
+      end
+
+      constraints = stack.remove_constraints
+      stack.update_element :constraints=, constraints
+
+      return stack, index
+    end
+
+    # @since 1.4.0
+    # @api private
+    def self.process_constraint(stack, raw:)
+      n, v = parse_constraint raw
+      stack.add_constraint Taipo::TypeElement::Constraint.new(name: n, value: v)
+    end
+
+    # @since 1.4.0
+    # @api private
+    def self.process_end(stack, name:)
+      return stack if name.empty?
+
+      process_name stack, name: name
+    end
+
+    # @since 1.4.0
+    # @api private
+    def self.escape?(c, states)
+      if states[:esc]
+        states[:esc] = false
+        return skip, states
+      end
+      
+      skip = true
+      
+      case c
+      when "'"
+        states[:ss] = !states[:ss] unless states[:re] || states[:ds]
+      when '"'
+        states[:ds] = !states[:ds] unless states[:re] || states[:ss]
+      when '/'
+        states[:re] = !states[:re] unless states[:ss] || states[:ds]
+      when '\\'
+        states[:esc] = true
+      else
+        skip = false
+      end
+
+     return skip, states
     end
   end
 end

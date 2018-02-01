@@ -39,7 +39,7 @@ class TaipoParserTest < Minitest::Test
     array.reduce(nil) do |memo, a|
       memo = (memo.nil?) ? '' : memo + '|'
       memo += a.name
-      memo += self.reverse_parse_child a.child_type
+      memo += self.reverse_parse_child a.children
       memo += self.reverse_parse_constraints a.constraints
     end
   end
