@@ -18,7 +18,7 @@ module Taipo
     # @api private
     attr_accessor :name
 
-    # The child types for this element
+    # The children for this element
     #
     # @since 1.4.0
     # @api private
@@ -32,18 +32,37 @@ module Taipo
 
     # Initialize a new type element
     #
+    # @param name [String] the name of this type
+    # @param children [Taipo::TypeElement::Children|NilClass] the children for
+    #   this type
+    # @param constraints [Array<Taipo::TypeElement::Constraints>|NilClass] the
+    #   constraints for this type
+    #
+    # @raise [::TypeError] if +name+, +children+ or +constraints+ was of the
+    #   wrong type
+    # @raise [::ArgumentError] if +name+, +children+ or +constraints+ was
+    #   blank/empty
+    #
     # @since 1.0.0
     # @api private
     def initialize(name:, children: nil, constraints: nil)
-      raise ::TypeError unless name.is_a? String
-      raise ::TypeError unless children.nil? || 
-        children.is_a?(Taipo::TypeElement::Children)
-      raise ::TypeError unless constraints.nil? || 
-        constraints.is_a?(Taipo::TypeElement::Constraints)
+      msg = 'Argument name was not a String.'
+      raise ::TypeError, msg unless name.is_a? String
+      msg = 'Argument name was an empty string.'
       raise ::ArgumentError if name.empty?
+
+      msg = 'Argument children was not a Taipo::TypeElement::Children.'
+      raise ::TypeError unless children.nil? ||
+        children.is_a?(Taipo::TypeElement::Children)
+      msg = 'Argument children was empty.'
       raise ::ArgumentError if !children.nil? && children.empty?
+
+      msg = 'Argument constraints was not a Taipo::TypeElement::Constraints.'
+      raise ::TypeError unless constraints.nil? ||
+        constraints.is_a?(Taipo::TypeElement::Constraints)
+      msg = 'Argument constraints was empty.'
       raise ::ArgumentError if !constraints.nil? && constraints.empty?
-      
+
       @name = name
       @children = children
       @constraints = constraints
@@ -68,16 +87,16 @@ module Taipo
 
     # Set the element's constraints to +csts+
     #
-    # @param csts [Array<Taipo::TypeElement::Constraint] the constraints
+    # @param csts [Taipo::TypeElement::Constraints] the constraints
     #
-    # @raise [::TypeError] if +csts+ was not an Array
+    # @raise [::TypeError] if +csts+ was not a Taipo::TypeElement::Constraints
     # @raise [Taipo::SyntaxError] if there are constraints with the same name
     #
     # @since 1.0.0
     # @api private
     def constraints=(csts)
-      msg = 'Argument csts was not an Array.'
-      raise ::TypeError, msg unless csts.is_a? Array
+      msg = 'Argument csts was not a Taipo::TypeElement::Constraints.'
+      raise ::TypeError, msg unless csts.is_a? Taipo::TypeElement::Constraints
 
       names = Hash.new
       csts.each do |c|
@@ -105,7 +124,7 @@ module Taipo
     # @api private
     def match?(arg)
       return true if optional? && arg.nil?
-      
+
       match_class?(arg) && match_constraints?(arg) && match_children?(arg)
     end
 
@@ -130,7 +149,7 @@ module Taipo
       end
     end
 
-    # Check if the class of the argument's child type matches
+    # Check if the class of the argument's children match
     #
     # @param arg [Object] the argument to compare
     #
@@ -176,7 +195,8 @@ module Taipo
     # Taipo borrows the syntax used in some other languages of denoting
     # optional types by appending a question mark to the end of the class name.
     #
-    # @note This merely checks whether +@name+ ends in a question mark.
+    # @note This merely checks whether {Taipo::TypeElement#name} ends in a
+    #   question mark.
     #
     # @return [Boolean] the result
     #
@@ -187,6 +207,8 @@ module Taipo
     end
 
     # Return the String representation of this TypeElement
+    #
+    # @return [String] the representation as a String
     #
     # @since 1.1.0
     # @api private

@@ -6,14 +6,14 @@ module Taipo
     # @since 1.0.0
     # @api private
     class SyntaxState
- 
+
       # Initialize a new state machine
       #
       # @param state_names [Array<Symbol>] an array of symbols designating the
       #   particular states to be used
       # @param counter_names_and_closers [Array<Array<Symbol>,Hash<Symbol,
       #   String>>] an array of two collections: an array of symbols
-      #   designating the names the state machine will use for counting 
+      #   designating the names the state machine will use for counting
       #   brackets and a hash of closing characters used for each bracket (the
       #   key for each closing character should have the same name as the name
       #   used for the counter)
@@ -58,10 +58,10 @@ module Taipo
         @status[key] = :allowed
       end
 
-      # Set all statuses to be +:allowed+ except those specified in the 
+      # Set all statuses to be +:allowed+ except those specified in the
       # +except+ array
       #
-      # @note Statuses which have been set to +:disabled+ will not be updated
+      # @note Statuses which have been set to +:disabled+ will not be updated.
       #
       # @param except [Array<Symbol>] keys not to update to +:allowed+ (will
       #   instead be set to +:prohibited+)
@@ -79,7 +79,7 @@ module Taipo
       # @return [Boolean] the result
       #
       # @since 1.0.0
-      # @api private  
+      # @api private
       def allowed?(key)
         @status[key] == :allowed
       end
@@ -99,7 +99,7 @@ module Taipo
       # Decrement the count for the given +key+ by 1
       #
       # @param key [Symbol] the key for the counter
-      # 
+      #
       # @since 1.0.0
       # @api private
       def decrement(key)
@@ -146,7 +146,7 @@ module Taipo
       # @return [Boolean] the result
       #
       # @since 1.0.0
-      # @api private 
+      # @api private
       def inside?(key)
         @counter[key] > 0
       end
@@ -177,7 +177,7 @@ module Taipo
       # Set all statuses to be +:prohibited+ except those specified in the
       # +except+ array
       #
-      # @note Statuses which have been set to +:disabled+ will not be updated
+      # @note Statuses which have been set to +:disabled+ will not be updated.
       #
       # @param except [Array<Symbol>] keys not to update to +:prohibited+ (will
       #   instead be set to +:allowed+)
@@ -201,11 +201,12 @@ module Taipo
       # Set all statuses to be +status+ except those specified in the +except+
       # array
       #
-      # @note Statuses which have been set to +:disabled+ will not be updated
+      # @note Statuses which have been set to +:disabled+ will not be updated.
       #
       # @param status [Symbol] the value for all statuses
       # @param except [Hash<Array<Symbol>, Symbol>] the exceptions
-      # @option except [Array<Symbol>] :exceptions keys not to update to +status+
+      # @option except [Array<Symbol>] :exceptions keys not to update to
+      #   +status+
       # @option except [Symbol] :status the value for exceptions
       #
       # @since 1.0.0
@@ -223,7 +224,7 @@ module Taipo
       #   brackets
       #
       # @since 1.0.0
-      # @api 
+      # @api
       def unbalanced()
         @counter.reduce(Array.new) do |memo, c|
           (c[1] == 0) ? memo : memo.push(@closers[c[0]])

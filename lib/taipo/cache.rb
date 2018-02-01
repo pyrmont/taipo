@@ -1,10 +1,11 @@
 module Taipo
+
   # A cache of Taipo::TypeElement created from parsed type definitions
   #
   # @since 1.0.0
   # @api private
   module Cache
-    
+
     # The hash that acts as the cache
     #
     # @since 1.0.0

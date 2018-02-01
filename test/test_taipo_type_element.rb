@@ -109,8 +109,10 @@ class TaipoTypeElementTest < Minitest::Test
       end
 
       should "set the constraints for valid input" do
-        csts = [ Taipo::TypeElement::Constraint.new(name: 'min', value: 1),
-                 Taipo::TypeElement::Constraint.new(name: 'max', value: 5) ]
+        csts = Taipo::TypeElement::Constraints.new(
+                 [ Taipo::TypeElement::Constraint.new(name: 'min', value: 1),
+                   Taipo::TypeElement::Constraint.new(name: 'max', value: 5) ]
+               )
         @te.constraints = csts
         assert (@te.constraints == csts)
       end
@@ -123,30 +125,36 @@ class TaipoTypeElementTest < Minitest::Test
       end
 
       should "raise a Taipo::SyntaxError when there duplicate constraints" do
-        csts = [ Taipo::TypeElement::Constraint.new(name: 'min', value: 1),
-                 Taipo::TypeElement::Constraint.new(name: 'min', value: 5) ]
+        csts = Taipo::TypeElement::Constraints.new(
+                 [ Taipo::TypeElement::Constraint.new(name: 'min', value: 1),
+                   Taipo::TypeElement::Constraint.new(name: 'min', value: 5) ]
+               )
         assert_raises(Taipo::SyntaxError) { @te.constraints = csts }
       end
     end
 
     context "has an instance method #match? that" do
       setup do
-        @csts = [ Taipo::TypeElement::Constraint.new(name: 'min', value: 1),
-                  Taipo::TypeElement::Constraint.new(name: 'max', value: 5) ]
-        
-        @te_p = Taipo::TypeElement.new(name: 'Integer')
-        
+        csts = Taipo::TypeElement::Constraints.new(
+                  [ Taipo::TypeElement::Constraint.new(name: 'min', value: 1),
+                    Taipo::TypeElement::Constraint.new(name: 'max', value: 5) ]
+                )
+
+        @te_p = Taipo::TypeElement.new name: 'Integer'
+
+        tes = Taipo::TypeElements.new [@te_p]
+
         @te_c = Taipo::TypeElement.new(
                   name: 'Array',
-                  children: Taipo::TypeElement::Children.new([[@te_p]])
+                  children: Taipo::TypeElement::Children.new([tes])
                 )
 
         @te_p_with_c = @te_p.dup
-        @te_p_with_c.constraints = @csts
-        
+        @te_p_with_c.constraints = csts
+
         @te_c_with_c = @te_c.dup
-        @te_c_with_c.constraints = @csts
-      end 
+        @te_c_with_c.constraints = csts
+      end
 
       should "return true for a match" do
         assert @te_p.match?(1)
@@ -172,8 +180,7 @@ class TaipoTypeElementTest < Minitest::Test
       should "return the String representation" do
         @valid_defs.each do |v|
           tes = Taipo::Parser.parse v
-          assert_equal(TaipoTestHelper.prepare_for_comparison(v),
-                       Taipo.types_to_s(tes))
+          assert_equal(TaipoTestHelper.prepare_for_comparison(v), tes.to_s)
         end
       end
     end

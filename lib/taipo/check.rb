@@ -1,7 +1,9 @@
 require 'taipo/cache'
 require 'taipo/exceptions'
 require 'taipo/parser'
+require 'taipo/type_elements'
 require 'taipo/type_element'
+require 'taipo/utilities'
 
 module Taipo
 
@@ -86,12 +88,12 @@ module Taipo
         is_match = types.any? { |t| t.match? arg }
 
         unless collect_invalids || is_match
-          if Taipo::instance_method? v
+          if Taipo::Utilities.instance_method? v
             msg = "Object '#{k}' does not respond to #{v}."
-          elsif Taipo::symbol? v
+          elsif Taipo::Utilities.symbol? v
             msg = "Object '#{k}' is not equal to #{v}."
           elsif arg.is_a? Enumerable
-            type_def = Taipo.object_to_type_def arg
+            type_def = Taipo::Utilities.object_to_type_def arg
             msg = "Object '#{k}' is #{type_def} but expected #{v}."
           else
             msg = "Object '#{k}' is #{arg.class.name} but expected #{v}."
@@ -125,8 +127,8 @@ module Taipo
     #
     # This is the callback called by Ruby when a module is included. In this
     # case, the callback will alias the method +__types__+ as +types+ if
-    # {Taipo.alias?} returns true. {Taipo.alias} is reset to true at the end of
-    # this method.
+    # {Taipo.alias?} returns true. {Taipo::@@alias} is reset to true at the end
+    # of this method.
     #
     # @param extender [Class|Module] the class or module extending this module
     #
@@ -142,8 +144,8 @@ module Taipo
     #
     # This is the callback called by Ruby when a module is included. In this
     # case, the callback will alias the method +__types__+ as +types+ if
-    # {Taipo.alias?} returns true. {Taipo.alias} is reset to true at the end of
-    # this method.
+    # {Taipo.alias?} returns true. {Taipo::@@alias} is reset to true at the end
+    # of this method.
     #
     # @param includer [Class|Module] the class or module including this module
     #

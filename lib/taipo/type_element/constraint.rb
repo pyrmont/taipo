@@ -6,7 +6,7 @@ module Taipo
     # @since 1.0.0
     # @api private
     class Constraint
-    
+
       # The identifier for an instance method
       #
       # @since 1.0.0
@@ -27,30 +27,24 @@ module Taipo
 
       # Initialize a new constraint
       #
-      # @param name [String|NilClass] the name of the constraint (if nil, this 
+      # @param name [String|NilClass] the name of the constraint (if nil, this
       #   is an instance method)
       # @param value [String|NilClass] the value of the constraint (sometimes a
       #   Constraint is initialized before the value is known)
       #
-      # @raise [::TypeError] if +name+ or +value+ were of the wrong type, or 
-      #   +value+ was not of the correct type for the type of constraint 
+      # @raise [::TypeError] if +name+ was the wrong type, or
+      #   +value+ was not of the correct type for the type of constraint
       # @raise [::ArgumentError] if +name+ was blank
       #
       # @since 1.0.0
-      # @api private 
+      # @api private
       def initialize(name: nil, value: nil)
         msg = 'Argument name was not nil or a String.'
         raise ::TypeError, msg unless name.nil? || name.is_a?(String)
         msg = 'Argument name was an empty string.'
-        raise ::ArgumentError, msg if name&.empty?
+        raise ::ArgumentError, msg if !name.nil? && name.empty?
 
-        @name = if name.nil?
-                  Constraint::METHOD
-                elsif name == ':'
-                  'val'
-                else
-                  name
-                end
+        @name = name
         @value = self.parse_value value
       end
 
@@ -97,6 +91,8 @@ module Taipo
       #
       # @param v [Object] the value
       #
+      # @return [Object] the parsed value
+      #
       # @raise [::TypeError] if the value is not appropriate for this type of
       #   constraint
       #
@@ -125,7 +121,7 @@ module Taipo
 
       # Return the String representation of this constraint
       #
-      # @return [String] the String representation
+      # @return [String] the representation as a String
       #
       # @since 1.0.0
       # @api private
@@ -144,7 +140,7 @@ module Taipo
 
       # Set +v+ to be the value for this constraint
       #
-      # @param v [Object] the value to set (this will be parsed using 
+      # @param v [Object] the value to set (this will be parsed using
       #   {#parse_value})
       #
       # @raise [::TypeError] if the value is not appropriate for this type of

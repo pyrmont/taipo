@@ -11,6 +11,7 @@ require 'taipo/type_element/constraint'
 module Taipo
 
   # A parser of Taipo type definitions
+  #
   # @since 1.0.0
   module Parser
 
@@ -28,16 +29,16 @@ module Taipo
     # @since 1.0.0
     def self.parse(str)
       Taipo::Parser::Validater.validate str
-      
+
       stack = Taipo::Parser::Stack.new
       i = 0
       subject = :implied
       chars = str.chars
       content = ''
-      
+
       while (i < chars.size)
         reset = true
-  
+
         case chars[i]
         when ' '
           i += 1
@@ -70,6 +71,53 @@ module Taipo
       stack.result
     end
 
+    # Check whether the character should be skipped
+    #
+    # This method determines whether a particular character +c+ should be
+    # skipped based on +states+. It also updates +states+.
+    #
+    # @param c [String] the character to check
+    # @param states [Hash<Symbol,Boolean>] a state machine
+    #
+    # @return [Boolean,Hash<Symbol,Boolean>] the result and the updated state
+    #   machine
+    #
+    # @since 1.4.0
+    # @api private
+    def self.escape?(c, states)
+      if states[:esc]
+        states[:esc] = false
+        return skip, states
+      end
+
+      skip = true
+
+      case c
+      when "'"
+        states[:ss] = !states[:ss] unless states[:re] || states[:ds]
+      when '"'
+        states[:ds] = !states[:ds] unless states[:re] || states[:ss]
+      when '/'
+        states[:re] = !states[:re] unless states[:ss] || states[:ds]
+      when '\\'
+        states[:esc] = true
+      else
+        skip = false
+      end
+
+     return skip, states
+    end
+
+    # Parse the constraint expressed as a string
+    #
+    # @note If the constraint is in the form of an instance method (eg. #foo)
+    #   this method uses {Taipo::TypeElement::Constraint::METHOD} as the name
+    #   returned.
+    #
+    # @param str [String] the constraint expressed as a string
+    #
+    # @return [String,String] the name and the value
+    #
     # @since 1.4.0
     # @api private
     def self.parse_constraint(str)
@@ -98,27 +146,23 @@ module Taipo
       return name, value
     end
 
-    # @since 1.4.0
-    # @api private
-    def self.process_name(stack, name:)
-      if name.bare_constraint?
-        chars = "(#{name})".chars
-        stack = process_subject stack, name: '', subject: :implied
-        stack, i = process_constraints stack, chars: chars, index: 1 
-        stack
-      else
-        stack.add_element name: name
-      end
-    end
-
-    # @since 1.4.0
-    # @api private
-    def self.process_sum(stack, name:)
-      return stack if name.empty?
-      
-      process_name stack, name: name
-    end
-
+    # Process a collection
+    #
+    # This method either adds or updates a collection on +stack+ depending on
+    # +direction+. If +direction+ is +:open+, this adds a
+    # {Taipo::TypeElement} to +stack+ representing the class of the collection.
+    # If +direction+ is +:close+, this adds a {Taipo::TypeElement} to +stack+
+    # representing the class of the final component of the collection.
+    #
+    # @param direction [Symbol] Either +:open+ or +:close+ depending on whether
+    #   this has been called because the parser reached a +<+ character or a
+    #   +>+ character
+    # @param stack [Taipo::Parser::Stack] the stack
+    # @param name [String] the name of the class of the {Taipo::TypeElement} to
+    #   add to +stack+
+    #
+    # @return [Taipo::Parser::Stack] the updated stack
+    #
     # @since 1.4.0
     # @api private
     def self.process_collection(direction, stack, name:)
@@ -133,6 +177,17 @@ module Taipo
       end
     end
 
+    # Process a component
+    #
+    # This method adds a {Taipo::TypeElement} to +stack+ representing a
+    # component of a collection.
+    #
+    # @param stack [Taipo::Parser::Stack] the stack
+    # @param name [String] the name of the class of the {Taipo::TypeElement} to
+    #   add to +stack+
+    #
+    # @return [Taipo::Parser::Stack] the updated stack
+    #
     # @since 1.4.0
     # @api private
     def self.process_component(stack, name:)
@@ -140,19 +195,35 @@ module Taipo
       stack.add_child
     end
 
+    # Process a constraint
+    #
+    # This method adds a {Taipo::TypeElement::Constraint} to the last element in
+    # +stack+.
+    #
+    # @param stack [Taipo::Parser::Stack] the stack
+    # @param raw [String] the constraint expressed as a string
+    #
+    # @return [Taipo::Parser::Stack] the updated stack
+    #
     # @since 1.4.0
     # @api private
-    def self.process_subject(stack, name:, subject:)
-      case subject
-      when :made
-        stack
-      when :unmade
-        process_name stack, name: name
-      when :implied
-        process_name stack, name: 'Object'
-      end
+    def self.process_constraint(stack, raw:)
+      n, v = parse_constraint raw
+      stack.add_constraint Taipo::TypeElement::Constraint.new(name: n, value: v)
     end
 
+    # Process a series of constraints
+    #
+    # This method adds a {Taipo::TypeElement::Constraints} to the last element
+    # in +stack+. Because it parses +chars+, it also returns an updated +index+.
+    #
+    # @param stack [Taipo::Parser::Stack] the stack
+    # @param chars [Array<String>] a character array
+    # @param index [Integer] the index of +chars+ at which to begin parsing
+    #
+    # @return [Taipo::Parser::Stack,Integer] the updated stack and the updated
+    #   index
+    #
     # @since 1.4.0
     # @api private
     def self.process_constraints(stack, chars:, index:)
@@ -189,13 +260,18 @@ module Taipo
       return stack, index
     end
 
-    # @since 1.4.0
-    # @api private
-    def self.process_constraint(stack, raw:)
-      n, v = parse_constraint raw
-      stack.add_constraint Taipo::TypeElement::Constraint.new(name: n, value: v)
-    end
-
+    # Process the end of the type definition
+    #
+    # The design of {Taipo::Parser.parse} means that at the end of the loop, an
+    # element may remain to be added. This method add any remaining element to
+    # +stack+.
+    #
+    # @param stack [Taipo::Parser::Stack] the stack
+    # @param name [String] the name of the class of the {Taipo::TypeElement} to
+    #   add to +stack+
+    #
+    # @return [Taipo::Parser::Stack] the updated stack
+    #
     # @since 1.4.0
     # @api private
     def self.process_end(stack, name:)
@@ -204,30 +280,77 @@ module Taipo
       process_name stack, name: name
     end
 
+    # Process the name of a {Taipo::TypeElement}
+    #
+    # This method adds a {Taipo::TypeElement} to +stack+ with the name +name+.
+    #
+    # @note Taipo allows certain bare constraints to be written in type
+    #   definitions. If +name+ is a bare constraint (either an instance method
+    #   or a symbol), this method adds a {Taipo::TypeElement} representing the
+    #   Object class with the relevant constraint.
+    #
+    # @param stack [Taipo::Parser::Stack] the stack
+    # @param name [String] the name of the class of the {Taipo::TypeElement} to
+    #   add to +stack+
+    #
+    # @return [Taipo::Parser::Stack] the updated stack
+    #
     # @since 1.4.0
     # @api private
-    def self.escape?(c, states)
-      if states[:esc]
-        states[:esc] = false
-        return skip, states
-      end
-      
-      skip = true
-      
-      case c
-      when "'"
-        states[:ss] = !states[:ss] unless states[:re] || states[:ds]
-      when '"'
-        states[:ds] = !states[:ds] unless states[:re] || states[:ss]
-      when '/'
-        states[:re] = !states[:re] unless states[:ss] || states[:ds]
-      when '\\'
-        states[:esc] = true
+    def self.process_name(stack, name:)
+      if name.bare_constraint?
+        chars = "(#{name})".chars
+        stack = process_subject stack, name: '', subject: :implied
+        stack, i = process_constraints stack, chars: chars, index: 1
+        stack
       else
-        skip = false
+        stack.add_element name: name
       end
+    end
 
-     return skip, states
+    # Process the subject of a series of constraints
+    #
+    # Taipo allows for a type definition to specify a series of constraints
+    # that constrain the particular type (the subject). This method adds a
+    # {Taipo::TypeElement} to +stack+ depending on the value of +subject+.
+    #
+    # @param stack [Taipo::Parser::Stack] the stack
+    # @param name [String] the name of the class of the {Taipo::TypeElement} to
+    #   add to +stack+
+    # @param subject [Symbol] whether the subject is :made, :unmade or :implied
+    #
+    # @return [Taipo::Parser::Stack] the updated stack
+    #
+    # @since 1.4.0
+    # @api private
+    def self.process_subject(stack, name:, subject:)
+      case subject
+      when :made
+        stack
+      when :unmade
+        process_name stack, name: name
+      when :implied
+        process_name stack, name: 'Object'
+      end
+    end
+
+    # Process a sum of types
+    #
+    # This method adds a {Taipo::TypeElement} to +stack+ representing the former
+    # of the types in the sum.
+    #
+    # @param stack [Taipo::Parser::Stack] the stack
+    # @param name [String] the name of the class of the {Taipo::TypeElement} to
+    #   add to +stack+
+    #
+    # @return [Taipo::Parser::Stack] the updated stack
+    #
+    # @since 1.4.0
+    # @api private
+    def self.process_sum(stack, name:)
+      return stack if name.empty?
+
+      process_name stack, name: name
     end
   end
 end
