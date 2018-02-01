@@ -21,7 +21,7 @@ module Taipo
     #
     # @param str [String] a type definition
     #
-    # @return [Taipo:TypeElements] the result
+    # @return [Taipo::TypeElements] the result
     #
     # @raise [::TypeError] if +str+ is not a String
     # @raise [Taipo::SyntaxError] if +str+ is not a valid type definition
