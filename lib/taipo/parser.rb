@@ -1,3 +1,4 @@
+require 'taipo/cache'
 require 'taipo/exceptions'
 require 'taipo/parser/stack'
 require 'taipo/parser/validater'
@@ -19,6 +20,10 @@ module Taipo
 
     # Return a Taipo::TypeElements object based on +str+
     #
+    # This method acts as a wrapping method to #parse_definition. It first
+    # checks if the type definition has already been parsed and is in Taipo's
+    # cache.
+    #
     # @param str [String] a type definition
     #
     # @return [Taipo::TypeElements] the result
@@ -28,48 +33,11 @@ module Taipo
     #
     # @since 1.0.0
     def self.parse(str)
-      Taipo::Parser::Validater.validate str
-
-      stack = Taipo::Parser::Stack.new
-      i = 0
-      subject = :implied
-      chars = str.chars
-      content = ''
-
-      while (i < chars.size)
-        reset = true
-
-        case chars[i]
-        when ' '
-          i += 1
-          next
-        when '|'
-          stack = process_sum stack, name: content
-          subject = :implied
-        when '<'
-          stack = process_collection :open, stack, name: content
-          subject = :implied
-        when '>'
-          stack = process_collection :close, stack, name: content
-          subject = :made
-        when ','
-          stack = process_component stack, name: content
-          subject = :implied
-        when '('
-          stack = process_subject stack, name: content, subject: subject
-          stack, i = process_constraints stack, chars: chars, index: i+1
-        else
-          reset = false
-          subject = :unmade
-        end
-
-        content = (reset) ? '' : content + chars[i]
-        i += 1
+      if hit = Taipo::Cache[str]
+        hit
+      else
+        Taipo::Cache[str] = Taipo::Parser.parse_definition str
       end
-
-      stack = process_end stack, name: content
-
-      stack.result
     end
 
     # Check whether the character should be skipped
@@ -145,6 +113,60 @@ module Taipo
       end
       value = content.strip
       return name, value
+    end
+
+    # Return a Taipo::TypeElements object based on +str+
+    #
+    # @param str (see #parse)
+    #
+    # @return (see #parse)
+    #
+    # @raise (see #parse)
+    # 
+    # @since 1.5.0
+    # @api private
+    def self.parse_definition(str)
+      Taipo::Parser::Validater.validate str
+
+      stack = Taipo::Parser::Stack.new
+      i = 0
+      subject = :implied
+      chars = str.chars
+      content = ''
+
+      while (i < chars.size)
+        reset = true
+
+        case chars[i]
+        when ' '
+          i += 1
+          next
+        when '|'
+          stack = process_sum stack, name: content
+          subject = :implied
+        when '<'
+          stack = process_collection :open, stack, name: content
+          subject = :implied
+        when '>'
+          stack = process_collection :close, stack, name: content
+          subject = :made
+        when ','
+          stack = process_component stack, name: content
+          subject = :implied
+        when '('
+          stack = process_subject stack, name: content, subject: subject
+          stack, i = process_constraints stack, chars: chars, index: i+1
+        else
+          reset = false
+          subject = :unmade
+        end
+
+        content = (reset) ? '' : content + chars[i]
+        i += 1
+      end
+
+      stack = process_end stack, name: content
+      stack.result
     end
 
     # Process a collection

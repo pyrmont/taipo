@@ -21,11 +21,6 @@ class TaipoCheckTest < Minitest::Test
       end
 
       should "return an empty array for valid local variables" do
-        # a = 'Test'
-        # b = 1
-        # arg_types = { a: 'String', b: 'Integer' }
-        # assert_equal [], check(binding, arg_types)
-        # a && b # Hack to avoid the unused variable warning.
         @td.each do |t|
           t[:pass].each do |p|
             assert_equal [], check(binding, p: t[:def])

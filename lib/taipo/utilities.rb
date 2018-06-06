@@ -6,6 +6,29 @@ module Taipo
   # @api private
   module Utilities
 
+    # Return a named variable from either an object or a binding
+    #
+    # @param name [String] the name of the variable
+    # @param object [Object] the object in which the variable may exist
+    # @param context [Binding] the binding in which the variable may exist
+    #
+    # @return [Object] the variable
+    #
+    # @raise [Taipo::NameError] if no variable with +name+ exists
+    #
+    # @since 1.5.0
+    # @api private
+    def self.extract_variable(name:, object:, context:)
+      if name[0] == '@' && object.instance_variable_defined?(name)
+        object.instance_variable_get name
+      elsif name[0] != '@' && context.local_variable_defined?(name)
+        context.local_variable_get name
+      else
+        msg = "Argument '#{name}' is not defined."
+        raise Taipo::NameError, msg
+      end
+    end
+
     # Check if a string is the name of an instance method
     #
     # @note All this does is check whether the given string begins with a hash

@@ -1,4 +1,3 @@
-require 'taipo/cache'
 require 'taipo/exceptions'
 require 'taipo/parser'
 require 'taipo/type_elements'
@@ -70,35 +69,14 @@ module Taipo
       raise ::TypeError, msg unless context.is_a? Binding
 
       checks.reduce(Array.new) do |memo,(k,v)|
-        arg = if k[0] == '@' && self.instance_variable_defined?(k)
-                self.instance_variable_get k
-              elsif k[0] != '@' && context.local_variable_defined?(k)
-                context.local_variable_get k
-              else
-                msg = "Argument '#{k}' is not defined."
-                raise Taipo::NameError, msg
-              end
-
-        types = if hit = Taipo::Cache[v]
-                  hit
-                else
-                  Taipo::Cache[v] = Taipo::Parser.parse v
-                end
-
-        is_match = types.any? { |t| t.match? arg }
+        arg = Taipo::Utilities.extract_variable(name: k, 
+                                                object: self, 
+                                                context: context)
+        
+        is_match = Taipo::Check.match? object: arg, definition: v
 
         unless collect_invalids || is_match
-          if Taipo::Utilities.instance_method? v
-            msg = "Object '#{k}' does not respond to #{v}."
-          elsif Taipo::Utilities.symbol? v
-            msg = "Object '#{k}' is not equal to #{v}."
-          elsif arg.is_a? Enumerable
-            type_def = Taipo::Utilities.object_to_type_def arg
-            msg = "Object '#{k}' is #{type_def} but expected #{v}."
-          else
-            msg = "Object '#{k}' is #{arg.class.name} but expected #{v}."
-          end
-          raise Taipo::TypeError, msg
+          Taipo::Check.throw_error object: arg, name: k, definition: v
         end
 
         (is_match) ? memo : memo.push(k)
@@ -121,6 +99,26 @@ module Taipo
     # @since 1.0.0
     def review(context, **checks)
       self.check(context, true, checks)
+    end
+
+    # Check if an object matches a given type definition
+    #
+    # @param object [Object] the object to check
+    # @param definition [String] the type definiton to check against
+    #
+    # @return [Boolean] the result
+    #
+    # @raise [::TypeError] if +definition+ is not a String
+    # @raise [Taipo::SyntaxError] if the type definitions in +checks+ are
+    #   invalid
+    #
+    # @since 1.5.0
+    def self.match?(object:, definition:)
+      msg = "The 'definition' argument must be of type String."
+      raise ::TypeError, msg unless definition.is_a? String
+      
+      types = Taipo::Parser.parse definition
+      types.any? { |t| t.match? object }
     end
 
     # Perform operations if this module is extended
@@ -154,6 +152,24 @@ module Taipo
     def self.included(includer)
       includer.send(:alias_method, :types, :__types__) if Taipo.alias?
       Taipo.alias = true
+    end
+
+    # @since 1.5.0
+    # @api private
+    def self.throw_error(object:, name:, definition:)
+      if Taipo::Utilities.instance_method? definition
+        msg = "Object '#{name}' does not respond to #{definition}."
+      elsif Taipo::Utilities.symbol? definition
+        msg = "Object '#{name}' is not equal to #{definition}."
+      elsif object.is_a? Enumerable
+        type_def = Taipo::Utilities.object_to_type_def object
+        msg = "Object '#{name}' is #{type_def} but expected #{definition}."
+      else
+        class_name = object.class.name
+        msg = "Object '#{name}' is #{class_name} but expected #{definition}."
+      end
+      
+      raise Taipo::TypeError, msg
     end
   end
 end
