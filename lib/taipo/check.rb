@@ -154,6 +154,16 @@ module Taipo
       Taipo.alias = true
     end
 
+    # Throw an error with an appropriate message for a given object not matching
+    # a given type definition
+    #
+    # @param object [Object] the object that does not match +definition+
+    # @param name [String] the name of the object (with the code that originally
+    #   called the #check method)
+    # @param definition [String] the type definition that does not match +object+
+    #
+    # @raise [Taipo::TypeError] the error
+    #
     # @since 1.5.0
     # @api private
     def self.throw_error(object:, name:, definition:)

@@ -20,9 +20,9 @@ module Taipo
 
     # Return a Taipo::TypeElements object based on +str+
     #
-    # This method acts as a wrapping method to #parse_definition. It first
-    # checks if the type definition has already been parsed and is in Taipo's
-    # cache.
+    # This method acts as a wrapping method to {Taipo::Parser.parse_definition}.
+    # It first checks if the type definition has already been parsed and is in
+    # Taipo's cache.
     #
     # @param str [String] a type definition
     #
@@ -117,11 +117,11 @@ module Taipo
 
     # Return a Taipo::TypeElements object based on +str+
     #
-    # @param str (see #parse)
+    # @param str (see {Taipo::Parser.parse})
     #
-    # @return (see #parse)
+    # @return (see {Taipo::Parser.parse})
     #
-    # @raise (see #parse)
+    # @raise (see {Taipo::Parser.parse})
     # 
     # @since 1.5.0
     # @api private
