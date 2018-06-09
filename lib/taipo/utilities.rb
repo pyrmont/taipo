@@ -132,22 +132,26 @@ module Taipo
     # @param name [String] the name of the object (with the code that originally
     #   called the #check method)
     # @param definition [String] the type definition that does not match +object+
+    # @param result [Boolean] whether this is being called in respect of a
+    #   return value (such as by {Taipo::Result::ClassMethods#result})
     #
     # @raise [Taipo::TypeError] the error
     #
     # @since 1.5.0
     # @api private
-    def self.throw_error(object:, name:, definition:)
+    def self.throw_error(object:, name:, definition:, result: false)
+      subject = (result) ? "The return value of #{name}" : "Object '#{name}'"
+
       if Taipo::Utilities.instance_method? definition
-        msg = "Object '#{name}' does not respond to #{definition}."
+        msg = "#{subject} does not respond to #{definition}."
       elsif Taipo::Utilities.symbol? definition
-        msg = "Object '#{name}' is not equal to #{definition}."
+        msg = "#{subject} is not equal to #{definition}."
       elsif object.is_a? Enumerable
         type_def = Taipo::Utilities.object_to_type_def object
-        msg = "Object '#{name}' is #{type_def} but expected #{definition}."
+        msg = "#{subject} is #{type_def} but expected #{definition}."
       else
         class_name = object.class.name
-        msg = "Object '#{name}' is #{class_name} but expected #{definition}."
+        msg = "#{subject} is #{class_name} but expected #{definition}."
       end
 
       raise Taipo::TypeError, msg

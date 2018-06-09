@@ -29,7 +29,7 @@ module Taipo
     # @api private
     def self.included(base)
       base.extend ClassMethods
-      module_name = "#{base.name}Checker"
+      module_name = "#{base.class.name}Checker"
       checker = const_defined?(module_name) ? const_get(module_name) :
                                               const_set(module_name, Module.new)
       base.prepend checker
@@ -80,7 +80,8 @@ module Taipo
       #   a.foo 'Hello world!'  #=> "Hello world!"
       #   a.bar 42              #=> Taipo::TypeError
       def result(method_name, type)
-        checker = const_get "#{self.name}Checker"
+        base = self
+        checker = const_get "#{base.class.name}Checker"
         checker.class_eval do
           define_method(method_name) do |*args, &block|
             method_return_value = super(*args, &block)
@@ -89,8 +90,9 @@ module Taipo
               method_return_value
             else
               Taipo::Utilities.throw_error(object: method_return_value,
-                                           name: 'value',
-                                           definition: type)
+                                           name: "#{base.name}##{method_name}",
+                                           definition: type,
+                                           result: true)
             end
           end
         end
