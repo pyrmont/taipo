@@ -1,3 +1,6 @@
+require 'taipo/exceptions'
+require 'taipo/parser'
+
 module Taipo
 
   # Utility methods for Taipo
@@ -42,6 +45,27 @@ module Taipo
     # @api private
     def self.instance_method?(str)
       str[0] == '#'
+    end
+
+    # Check if an object matches a given type definition
+    #
+    # @param object [Object] the object to check
+    # @param definition [String] the type definiton to check against
+    #
+    # @return [Boolean] the result
+    #
+    # @raise [::TypeError] if +definition+ is not a String
+    # @raise [Taipo::SyntaxError] if the type definitions in +checks+ are
+    #   invalid
+    #
+    # @since 1.5.0
+    # @api private
+    def self.match?(object:, definition:)
+      msg = "The 'definition' argument must be of type String."
+      raise ::TypeError, msg unless definition.is_a? String
+
+      types = Taipo::Parser.parse definition
+      types.any? { |t| t.match? object }
     end
 
     # Return the type definition for an object
@@ -99,6 +123,34 @@ module Taipo
     # @api private
     def self.symbol?(str)
       str[0] == ':'
+    end
+
+    # Throw an error with an appropriate message for a given object not matching
+    # a given type definition
+    #
+    # @param object [Object] the object that does not match +definition+
+    # @param name [String] the name of the object (with the code that originally
+    #   called the #check method)
+    # @param definition [String] the type definition that does not match +object+
+    #
+    # @raise [Taipo::TypeError] the error
+    #
+    # @since 1.5.0
+    # @api private
+    def self.throw_error(object:, name:, definition:)
+      if Taipo::Utilities.instance_method? definition
+        msg = "Object '#{name}' does not respond to #{definition}."
+      elsif Taipo::Utilities.symbol? definition
+        msg = "Object '#{name}' is not equal to #{definition}."
+      elsif object.is_a? Enumerable
+        type_def = Taipo::Utilities.object_to_type_def object
+        msg = "Object '#{name}' is #{type_def} but expected #{definition}."
+      else
+        class_name = object.class.name
+        msg = "Object '#{name}' is #{class_name} but expected #{definition}."
+      end
+
+      raise Taipo::TypeError, msg
     end
   end
 end

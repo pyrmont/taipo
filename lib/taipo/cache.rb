@@ -1,6 +1,6 @@
 module Taipo
 
-  # A cache of Taipo::TypeElement created from parsed type definitions
+  # A cache of {Taipo::TypeElement} objects created from parsed type definitions
   #
   # @since 1.0.0
   # @api private
@@ -12,7 +12,8 @@ module Taipo
     # @api private
     @@Cache = {}
 
-    # Retrieve the Taipo::TypeElement object described by the type definition from the cache
+    # Retrieve the {Taipo::TypeElement} object described by the type definition
+    # from the cache
     #
     # @param k [String] the type definition
     #
@@ -25,7 +26,8 @@ module Taipo
       @@Cache[k]
     end
 
-    # Save the Taipo::TypeElement object described by the type definition in the cache
+    # Save the {Taipo::TypeElement} object described by the type definition in
+    # the cache
     #
     # @param k [String] the type definition
     # @param v [Taipo::TypeElement] the object to be saved

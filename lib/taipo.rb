@@ -1,33 +1,26 @@
 require 'taipo/version'
 require 'taipo/check'
-require 'taipo/parser'
+require 'taipo/result'
 
 # A library for checking the types of objects
 #
-# Taipo is primarily intended as a replacement for cumbersome, error-prone
-# guard statements a user can put in their code to ensure that the variables
-# they are handling conform to expectations.
+# Taipo is primarily intended as a replacement for verbose, error-prone guard
+# statements. With Taipo, a user can ensure that the objects they are working
+# with conform to expectations.
 #
-# By including the module {Taipo::Check}, a user can call the
-# {Taipo::Check#check} or {Taipo::Check#review} methods in their classes
-# whenever a guard statement is necessary. Expectations are written as type
-# definitions. A type definition contains the name of the type and the type
-# definitions of any elements it contains (if it is enumerable). Optional
-# constraints may be specified and sum types are also possible. See
+# Taipo consists of two user-facing parts: {Taipo::Check} and {Taipo::Result}.
+#
+# * By including the module {Taipo::Check}, a user can call
+#   {Taipo::Check#check} or {Taipo::Check#review} in their methods to
+#   check the types of one or more given variables.
+#
+# * By including the module {Taipo::Result}, a user can call
+#   {Taipo::Result::ClassMethods#result} in their class definitions to check the
+#   return values of a given method.
+#
+# Taipo provides a rich syntax to express type definitions. This includes
+# classes, collections, optionals and duck types. See
 # {Taipo::Parser::Validater} for the full syntax.
-#
-# Taipo works by:
-# 1. extracting the values of the arguments to be checked from a Binding;
-# 2. transforming the type definitions provided as Strings into an array of
-#    {Taipo::TypeElement} instances; and
-# 3. checking whether the argument's value matches any of the instances of
-#    {Taipo::TypeElement} in the array.
-#
-# As syntactic sugar, the {Taipo::Check} module will by default alias
-# +Kernel#binding+ with the keyword +types+. This allows the user to call
-# {Taipo::Check#check} by writing +check types+ (with a similar syntax for
-# {Taipo::Check#review}). If the user does not want to alias, they can set
-# {Taipo.alias=} to +false+ before including or extending {Taipo::Check}.
 #
 # @since 1.0.0
 # @see https://github.com/pyrmont/taipo

@@ -22,7 +22,10 @@ Run `gem install taipo` or add `gem 'taipo'` to your `Gemfile`.
 
 ## Usage
 
-Taipo provides two methods in the `Taipo::Check` module that we can mix into our classes: `#check` and `#review`.
+Taipo can be used to check variables within a given context or check the return value of a given method:
+
+* the `Taipo::Check` module provides two methods: `#check` and `#review`:
+* the `Taipo::Result` module provides one method: `.result`.
 
 ### #check
 
@@ -77,6 +80,32 @@ The method `#review` will put the invalid arguments into an array and return tha
 [More information about `#review`][rdr] is available in the documentation.
 
 [rdr]: http://www.rubydoc.info/gems/taipo/Taipo/Check#review-instance_method
+
+### .result
+
+```ruby
+require 'taipo'
+
+class Foo
+  include Taipo::Result
+
+  result :add, 'Integer'
+
+  def add(x, y)
+    x + y
+  end
+end
+
+foo = Foo.new
+foo.add 4, 5               #=> 9
+foo.add 'hello', 'world'   #=> Taipo::TypeError
+```
+
+The method `.result` will raise an exception if the return value of the specified method doesn't match the specified type definition.
+
+[More information about `.result`][rde] is available in the documentation.
+
+[rde]: http://www.rubydoc.info/gems/taipo/Taipo/Result/ClassMethods#result-instance_method
 
 ## Syntax
 

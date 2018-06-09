@@ -1,12 +1,21 @@
-require 'taipo/exceptions'
-require 'taipo/parser'
-require 'taipo/type_elements'
-require 'taipo/type_element'
 require 'taipo/utilities'
 
 module Taipo
 
-  # A dedicated namespace for methods meant to be included by the user
+  # A simple DSL for declaring type checks to run against specified variables
+  #
+  # {Taipo::Check} works by:
+  # 1. extracting the values of the arguments to be checked from a Binding;
+  # 2. transforming the type definitions provided as Strings into an array of
+  #    {Taipo::TypeElement} instances; and
+  # 3. checking whether the argument's value matches any of the instances of
+  #    {Taipo::TypeElement} in the array.
+  #
+  # As syntactic sugar, the {Taipo::Check} module will by default alias
+  # +Kernel#binding+ with the keyword +types+. This allows the user to call
+  # {Taipo::Check#check} by writing +check types+ (with a similar syntax for
+  # {Taipo::Check#review}). If the user does not want to alias, they can set
+  # {Taipo.alias=} to +false+ before including or extending {Taipo::Check}.
   #
   # @since 1.0.0
   module Check
@@ -69,14 +78,14 @@ module Taipo
       raise ::TypeError, msg unless context.is_a? Binding
 
       checks.reduce(Array.new) do |memo,(k,v)|
-        arg = Taipo::Utilities.extract_variable(name: k, 
-                                                object: self, 
+        arg = Taipo::Utilities.extract_variable(name: k,
+                                                object: self,
                                                 context: context)
-        
-        is_match = Taipo::Check.match? object: arg, definition: v
+
+        is_match = Taipo::Utilities.match? object: arg, definition: v
 
         unless collect_invalids || is_match
-          Taipo::Check.throw_error object: arg, name: k, definition: v
+          Taipo::Utilities.throw_error object: arg, name: k, definition: v
         end
 
         (is_match) ? memo : memo.push(k)
@@ -99,26 +108,6 @@ module Taipo
     # @since 1.0.0
     def review(context, **checks)
       self.check(context, true, checks)
-    end
-
-    # Check if an object matches a given type definition
-    #
-    # @param object [Object] the object to check
-    # @param definition [String] the type definiton to check against
-    #
-    # @return [Boolean] the result
-    #
-    # @raise [::TypeError] if +definition+ is not a String
-    # @raise [Taipo::SyntaxError] if the type definitions in +checks+ are
-    #   invalid
-    #
-    # @since 1.5.0
-    def self.match?(object:, definition:)
-      msg = "The 'definition' argument must be of type String."
-      raise ::TypeError, msg unless definition.is_a? String
-      
-      types = Taipo::Parser.parse definition
-      types.any? { |t| t.match? object }
     end
 
     # Perform operations if this module is extended
@@ -152,34 +141,6 @@ module Taipo
     def self.included(includer)
       includer.send(:alias_method, :types, :__types__) if Taipo.alias?
       Taipo.alias = true
-    end
-
-    # Throw an error with an appropriate message for a given object not matching
-    # a given type definition
-    #
-    # @param object [Object] the object that does not match +definition+
-    # @param name [String] the name of the object (with the code that originally
-    #   called the #check method)
-    # @param definition [String] the type definition that does not match +object+
-    #
-    # @raise [Taipo::TypeError] the error
-    #
-    # @since 1.5.0
-    # @api private
-    def self.throw_error(object:, name:, definition:)
-      if Taipo::Utilities.instance_method? definition
-        msg = "Object '#{name}' does not respond to #{definition}."
-      elsif Taipo::Utilities.symbol? definition
-        msg = "Object '#{name}' is not equal to #{definition}."
-      elsif object.is_a? Enumerable
-        type_def = Taipo::Utilities.object_to_type_def object
-        msg = "Object '#{name}' is #{type_def} but expected #{definition}."
-      else
-        class_name = object.class.name
-        msg = "Object '#{name}' is #{class_name} but expected #{definition}."
-      end
-      
-      raise Taipo::TypeError, msg
     end
   end
 end

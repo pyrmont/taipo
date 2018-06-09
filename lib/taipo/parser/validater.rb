@@ -18,8 +18,7 @@ module Taipo
     #
     # The validater does not check whether the name represents a valid name in
     # the current context nor does it check whether the name complies with
-    # Ruby's requirements for names. Either situation will cause an exception
-    # to be raised by {Taipo::Check#check} or {Taipo::Check#review}.
+    # Ruby's requirements for names.
     #
     # One special case is where the name is left blank. The validater will
     # accept this as valid. {Taipo::Parser} will implictly add the name
@@ -32,7 +31,7 @@ module Taipo
     #
     # As noted above, duck types can be specified by using a blank name. Duck
     # types are really constraints (discussed in further detail below) on the
-    # class Object. While normally constraints need to be enclosed in
+    # class +Object+. While normally constraints need to be enclosed in
     # parentheses, if there is a blank name and only one method constraint, the
     # parentheses can be omitted. For defining duck types that respond to
     # multiple methods, the parentheses are required.
@@ -43,10 +42,10 @@ module Taipo
     #
     # It is possible to specify an 'optional' type by appending a question mark
     # to the name of the type. This shorthand functions similarly to defining a
-    # sum type with NilClass (the implementation of how optional types are
+    # sum type with +NilClass+ (the implementation of how optional types are
     # checked is slightly different, however; see {Taipo::TypeElement#match?}).
     # It is not possible to define an optional duck type. For that, either the
-    # implicit Object class should be specified (and then made optional), or a
+    # implicit +Object+ class should be specified (and then made optional), or a
     # sum type should be used.
     #
     # === Collections
@@ -62,8 +61,8 @@ module Taipo
     # definition for the child comes immediately after the opening angle
     # bracket.
     #
-    # If +Enumerator#each+ returns multiple values (eg. such as with Hash), the
-    # type definition for each value is delimited by a comma. It is optional
+    # If +Enumerator#each+ returns multiple values (eg. such as with +Hash+),
+    # the type definition for each value is delimited by a comma. It is optional
     # whether a space follows the comma.
     #
     # The type definition for a child element can contain all the components of
@@ -123,7 +122,7 @@ module Taipo
     # It's possible to approximate the enum idiom available in many languages
     # by creating a sum type consisting of Symbols. As a convenience, Taipo
     # parses these values as constraints on the Object class. In other words,
-    # +':foo|:bar'+ is really +'Object(val: :foo)|Object(val: :bar)'+.
+    # the +:foo|:bar+ is really +Object(val: :foo)|Object(val: :bar)+.
     #
     # @since 1.0.0
     module Validater
