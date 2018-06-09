@@ -112,8 +112,9 @@ module Taipo
       #
       # @since 1.4.0
       # @api private
-      def add_constraint(constraint)
-        self.last.push constraint
+      def add_constraint(name:, value:)
+        self.last.push Taipo::TypeElement::Constraint.new(name: name,
+                                                          value: value)
         self
       end
 

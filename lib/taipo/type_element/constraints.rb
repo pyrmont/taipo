@@ -1,5 +1,3 @@
-require 'taipo/type_element/constraint'
-
 module Taipo
   class TypeElement
 

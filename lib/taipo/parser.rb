@@ -1,13 +1,7 @@
 require 'taipo/cache'
-require 'taipo/exceptions'
 require 'taipo/parser/stack'
 require 'taipo/parser/validater'
 require 'taipo/refinements'
-require 'taipo/type_elements'
-require 'taipo/type_element'
-require 'taipo/type_element/children'
-require 'taipo/type_element/constraints'
-require 'taipo/type_element/constraint'
 
 module Taipo
 
@@ -96,7 +90,7 @@ module Taipo
       content = ''
       str.each_char do |c|
         if c == '#' && in_name.nil?
-          name = Taipo::TypeElement::Constraint::METHOD
+          name = '#'
           in_name = false
         elsif c == ':' && in_name.nil?
           name = 'val'
@@ -122,7 +116,7 @@ module Taipo
     # @return (see {Taipo::Parser.parse})
     #
     # @raise (see {Taipo::Parser.parse})
-    # 
+    #
     # @since 1.5.0
     # @api private
     def self.parse_definition(str)
@@ -232,7 +226,7 @@ module Taipo
     # @api private
     def self.process_constraint(stack, raw:)
       n, v = parse_constraint raw
-      stack.add_constraint Taipo::TypeElement::Constraint.new(name: n, value: v)
+      stack.add_constraint name: n, value: v
     end
 
     # Process a series of constraints

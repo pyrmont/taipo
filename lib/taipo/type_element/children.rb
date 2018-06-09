@@ -1,5 +1,3 @@
-require 'taipo/type_elements'
-
 module Taipo
   class TypeElement
 
