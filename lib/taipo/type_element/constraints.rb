@@ -9,7 +9,8 @@ module Taipo
 
       # Initialize a new set of {Taipo::TypeElement::Constraint}
       #
-      # @param els [Array<Taipo::TypeElement::Constraint>] the constraints
+      # @param constraints [Array<Taipo::TypeElement::Constraint>] the
+      #   constraints
       #
       # @since 1.4.0
       # @api private
